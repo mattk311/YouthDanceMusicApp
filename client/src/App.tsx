@@ -3,16 +3,27 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import LoginCard from "@/components/LoginCard";
 import HomePage from "@/pages/HomePage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { data: user, isLoading } = useQuery({
+    queryKey: ["/api/auth/user"],
+    retry: false,
+  });
 
-  if (!isAuthenticated) {
-    return <LoginCard onGoogleLogin={() => setIsAuthenticated(true)} />;
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-lg text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginCard />;
   }
 
   return (

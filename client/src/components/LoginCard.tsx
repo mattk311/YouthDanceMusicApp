@@ -3,11 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Music } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 
-interface LoginCardProps {
-  onGoogleLogin?: () => void;
-}
+export default function LoginCard() {
+  const handleGoogleLogin = () => {
+    window.location.href = "/auth/google";
+  };
 
-export default function LoginCard({ onGoogleLogin }: LoginCardProps) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
@@ -24,7 +24,7 @@ export default function LoginCard({ onGoogleLogin }: LoginCardProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <Button 
-            onClick={onGoogleLogin}
+            onClick={handleGoogleLogin}
             variant="outline" 
             className="w-full gap-2 h-11"
             data-testid="button-google-login"

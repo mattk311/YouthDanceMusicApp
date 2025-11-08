@@ -1,48 +1,74 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import Header from "@/components/Header";
 import SongSearchForm from "@/components/SongSearchForm";
 import SongResult, { type SongStatus, type SongData } from "@/components/SongResult";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useToast } from "@/hooks/use-toast";
+import type { User } from "@shared/schema";
 
 export default function HomePage() {
+  const { toast } = useToast();
   const [searchResult, setSearchResult] = useState<{
     status: SongStatus;
     song?: SongData;
   } | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
 
-  const handleSearch = (songTitle: string, artist: string) => {
-    console.log('Searching for:', songTitle, artist);
-    setIsSearching(true);
-    
-    setTimeout(() => {
-      const mockSong: SongData = {
-        title: songTitle,
-        artist: artist || "Unknown Artist",
-        album: "Sample Album",
-        albumArt: "https://i.scdn.co/image/ab67616d0000b273e8107e6d9214baa81bb79bba",
-        explicit: Math.random() > 0.7,
-      };
+  const { data: user } = useQuery<User>({
+    queryKey: ["/api/auth/user"],
+  });
 
-      const foundSong = Math.random() > 0.2;
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+      if (!response.ok) throw new Error("Logout failed");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    },
+  });
+
+  const searchMutation = useMutation({
+    mutationFn: async ({ title, artist }: { title: string; artist: string }) => {
+      const params = new URLSearchParams({ title });
+      if (artist) params.append("artist", artist);
       
-      if (foundSong) {
-        setSearchResult({
-          status: mockSong.explicit ? "unsafe" : "safe",
-          song: mockSong,
-        });
+      const response = await fetch(`/api/songs/search?${params}`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to search song");
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (!data.found) {
+        setSearchResult({ status: "not-found" });
       } else {
         setSearchResult({
-          status: "not-found",
+          status: data.song.explicit ? "unsafe" : "safe",
+          song: data.song,
         });
       }
-      
-      setIsSearching(false);
-    }, 1000);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Search failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSearch = (songTitle: string, artist: string) => {
+    searchMutation.mutate({ title: songTitle, artist });
   };
 
   const handleLogout = () => {
-    console.log('Logout clicked');
+    logoutMutation.mutate();
   };
 
   return (
@@ -52,10 +78,11 @@ export default function HomePage() {
       </div>
       
       <Header 
-        user={{
-          name: "Sarah Johnson",
-          email: "sarah@church.org",
-        }}
+        user={user ? {
+          name: user.name,
+          email: user.email,
+          avatar: user.avatar || undefined,
+        } : undefined}
         onLogout={handleLogout}
       />
       
@@ -63,7 +90,7 @@ export default function HomePage() {
         <div className="max-w-3xl mx-auto space-y-8">
           <SongSearchForm 
             onSearch={handleSearch}
-            isLoading={isSearching}
+            isLoading={searchMutation.isPending}
           />
           
           {searchResult && (

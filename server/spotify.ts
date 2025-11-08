@@ -3,11 +3,11 @@ import { SpotifyApi } from "@spotify/web-api-ts-sdk";
 const clientId = process.env.SPOTIFY_CLIENT_ID;
 const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
-if (!clientId || !clientSecret) {
-  throw new Error("Spotify credentials not found in environment variables");
-}
+let spotify: SpotifyApi | null = null;
 
-const spotify = SpotifyApi.withClientCredentials(clientId, clientSecret);
+if (clientId && clientSecret) {
+  spotify = SpotifyApi.withClientCredentials(clientId, clientSecret);
+}
 
 export interface SpotifyTrack {
   id: string;
@@ -23,6 +23,10 @@ export async function searchSong(
   title: string,
   artist?: string
 ): Promise<SpotifyTrack | null> {
+  if (!spotify) {
+    throw new Error("Spotify API not configured. Please add SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET to your environment variables.");
+  }
+
   try {
     const query = artist ? `track:${title} artist:${artist}` : title;
     const results = await spotify.search(query, ["track"], undefined, 1);
