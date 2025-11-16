@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import SongSearchForm from "@/components/SongSearchForm";
 import SongResult, { type SongStatus, type SongData } from "@/components/SongResult";
 import ThemeToggle from "@/components/ThemeToggle";
+import AdSense from "@/components/AdSense";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@shared/schema";
 
@@ -119,6 +120,16 @@ export default function HomePage() {
       
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto space-y-8">
+          {/* Top Banner Ad */}
+          <div className="flex justify-center" data-testid="ad-top-banner">
+            <AdSense
+              slot={import.meta.env.VITE_ADSENSE_SLOT_BANNER}
+              format="auto"
+              style={{ display: "block", minHeight: "90px" }}
+              className="max-w-full"
+            />
+          </div>
+
           <SongSearchForm 
             onSearch={handleSearch}
             isLoading={searchMutation.isPending}
@@ -134,8 +145,28 @@ export default function HomePage() {
                 status={searchResult.status}
                 song={searchResult.song}
               />
+              
+              {/* In-Content Ad (after results) */}
+              <div className="mt-8 flex justify-center" data-testid="ad-content">
+                <AdSense
+                  slot={import.meta.env.VITE_ADSENSE_SLOT_RECTANGLE}
+                  format="auto"
+                  style={{ display: "block", minHeight: "250px" }}
+                  className="max-w-full"
+                />
+              </div>
             </div>
           )}
+
+          {/* Footer Ad */}
+          <div className="mt-12 flex justify-center" data-testid="ad-footer">
+            <AdSense
+              slot={import.meta.env.VITE_ADSENSE_SLOT_FOOTER}
+              format="auto"
+              style={{ display: "block", minHeight: "90px" }}
+              className="max-w-full"
+            />
+          </div>
         </div>
       </main>
     </div>

@@ -167,9 +167,19 @@ After finding a song on Spotify, the application automatically evaluates it usin
 - Console logging shows cache hits/misses for monitoring
 
 ## Recent Changes (November 16, 2025)
+- **Added Google AdSense integration**: Application is now monetization-ready with strategic ad placements
+  - Implemented reusable AdSense component with TypeScript support
+  - Added 3 ad units: top banner, in-content rectangle, and footer banner
+  - Uses environment variables for flexible configuration (VITE_ADSENSE_CLIENT, VITE_ADSENSE_SLOT_*)
+  - Responsive ad formats that adapt to all screen sizes
+  - Created comprehensive setup guide (ADSENSE_SETUP.md) with step-by-step instructions
+  - Safe fallback when AdSense credentials not configured (app works without ads)
+- **Fixed Neon database connection issues**: Switched from WebSocket to HTTP driver for reliable serverless connections
+- **Added UI enhancements**: Autocomplete suggestions now close on search submit, auto-scroll to results after search
 - **Added database caching system**: PostgreSQL database now caches all song searches and AI evaluation results
 - **Implemented DbStorage class**: Database storage layer with Drizzle ORM for persistent song and user data
 - **Cache-first architecture**: Backend checks database before calling Spotify/AI APIs, reducing costs and improving speed
+- **Fixed Google OAuth callback URL**: Now uses REPLIT_DEV_DOMAIN for proper dynamic URL configuration
 - Added OpenAI integration using Replit AI Integrations (GPT-5 model)
 - Implemented comprehensive AI evaluation system for song appropriateness
 - Enhanced result display to show AI reasoning, concerns, and positive aspects
@@ -177,3 +187,33 @@ After finding a song on Spotify, the application automatically evaluates it usin
 - Updated color scheme to reflect recommendation levels (green/yellow/red)
 - Added "Open in Spotify" link to results
 - Improved error handling across autocomplete and evaluation flows
+
+## Monetization
+
+### Google AdSense Integration
+The application includes Google AdSense for revenue generation with optimized ad placements:
+
+**Ad Placement Strategy**
+1. **Top Banner Ad** - Displayed above search form for maximum visibility
+2. **In-Content Rectangle** - Appears after search results (high engagement area)
+3. **Footer Banner** - Always visible at bottom of page
+
+**Configuration**
+- Environment variables for flexible setup (see `.env.example`)
+- Responsive ad units that adapt to mobile and desktop
+- Non-intrusive placement that maintains user experience
+- Ads only display when properly configured (graceful degradation)
+
+**Setup Instructions**
+- See `ADSENSE_SETUP.md` for complete guide on:
+  - Applying for Google AdSense
+  - Creating ad units
+  - Configuring environment variables
+  - Adding ads.txt file
+  - Testing and optimization tips
+
+**Revenue Potential**
+- Multiple ad positions increase revenue opportunities
+- High engagement from users checking multiple songs
+- Faith-based content typically AdSense-friendly
+- Mobile-responsive design maximizes mobile ad revenue
