@@ -1,9 +1,8 @@
 import { type User, type InsertUser, type Song, type InsertSong, users, songs } from "@shared/schema";
 import { randomUUID } from "crypto";
-import { drizzle } from "drizzle-orm/neon-serverless";
-import { Pool } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
+import { neon } from "@neondatabase/serverless";
 import { eq } from "drizzle-orm";
-import ws from "ws";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -76,11 +75,9 @@ export class DbStorage implements IStorage {
     if (!connectionString) {
       throw new Error("DATABASE_URL environment variable is not set");
     }
-    const pool = new Pool({ 
-      connectionString,
-      webSocketConstructor: ws as any
-    });
-    this.db = drizzle(pool);
+    const sql = neon(connectionString);
+    this.db = drizzle(sql);
+    console.log("[Storage] Using Neon HTTP driver for database connection");
   }
 
   async getUser(id: string): Promise<User | undefined> {
