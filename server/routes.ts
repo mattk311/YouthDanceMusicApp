@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import passport from "./auth";
 import { searchSong, getAutocompleteSuggestions } from "./spotify";
+import { evaluateSongForLDSChurchDance } from "./ai-evaluator";
 import type { User } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -81,6 +82,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ found: false });
       }
 
+      // Evaluate the song with AI (with graceful fallback)
+      let evaluation = null;
+      try {
+        evaluation = await evaluateSongForLDSChurchDance(
+          track.name,
+          track.artists.join(", "),
+          track.album
+        );
+      } catch (aiError) {
+        console.error("AI evaluation failed, continuing without evaluation:", aiError);
+        // Continue with song data even if AI fails
+      }
+
       res.json({
         found: true,
         song: {
@@ -91,6 +105,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           explicit: track.explicit,
           spotifyUrl: track.spotifyUrl,
         },
+        evaluation: evaluation ? {
+          appropriate: evaluation.appropriate,
+          reasoning: evaluation.reasoning,
+          concerns: evaluation.concerns,
+          positives: evaluation.positives,
+          recommendation: evaluation.recommendation,
+        } : null,
       });
     } catch (error) {
       console.error("Error searching song:", error);

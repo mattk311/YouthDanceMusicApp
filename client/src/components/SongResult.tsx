@@ -1,8 +1,18 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { CheckCircle2, XCircle, AlertCircle, AlertTriangle, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
-export type SongStatus = "safe" | "unsafe" | "not-found";
+export type SongStatus = "safe" | "unsafe" | "not-found" | "review";
+
+export interface SongEvaluation {
+  appropriate: boolean;
+  reasoning: string;
+  concerns: string[];
+  positives: string[];
+  recommendation: "approved" | "not-recommended" | "review-needed";
+}
 
 export interface SongData {
   title: string;
@@ -11,6 +21,7 @@ export interface SongData {
   albumArt?: string;
   explicit: boolean;
   spotifyUrl?: string;
+  evaluation?: SongEvaluation;
 }
 
 interface SongResultProps {
@@ -40,29 +51,53 @@ export default function SongResult({ status, song }: SongResultProps) {
   if (!song) return null;
 
   const isSafe = status === "safe";
+  const isReview = status === "review";
+  const evaluation = song.evaluation;
+
+  const getStatusConfig = () => {
+    if (isSafe) {
+      return {
+        icon: CheckCircle2,
+        iconColor: "text-success",
+        borderColor: "border-l-success",
+        title: "Approved for Church Dance",
+        iconTestId: "icon-safe"
+      };
+    } else if (isReview) {
+      return {
+        icon: AlertTriangle,
+        iconColor: "text-warning",
+        borderColor: "border-l-warning",
+        title: "Review Recommended",
+        iconTestId: "icon-review"
+      };
+    } else {
+      return {
+        icon: XCircle,
+        iconColor: "text-destructive",
+        borderColor: "border-l-destructive",
+        title: "Not Recommended",
+        iconTestId: "icon-unsafe"
+      };
+    }
+  };
+
+  const statusConfig = getStatusConfig();
+  const StatusIcon = statusConfig.icon;
 
   return (
-    <Card className={`border-l-4 ${isSafe ? 'border-l-success' : 'border-l-destructive'}`}>
+    <Card className={`border-l-4 ${statusConfig.borderColor}`}>
       <CardContent className="pt-6">
         <div className="flex gap-6">
           <div className="flex-shrink-0">
-            {isSafe ? (
-              <CheckCircle2 className="h-8 w-8 text-success" data-testid="icon-safe" />
-            ) : (
-              <XCircle className="h-8 w-8 text-destructive" data-testid="icon-unsafe" />
-            )}
+            <StatusIcon className={`h-8 w-8 ${statusConfig.iconColor}`} data-testid={statusConfig.iconTestId} />
           </div>
           
           <div className="flex-1 space-y-4">
             <div>
               <h3 className="text-2xl font-semibold mb-1" data-testid="text-result-title">
-                {isSafe ? "Safe for Church Dance" : "Not Recommended"}
+                {statusConfig.title}
               </h3>
-              <p className="text-muted-foreground">
-                {isSafe 
-                  ? "This song has been verified and is appropriate for youth events" 
-                  : "This song contains explicit content and is not recommended for church youth dances"}
-              </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
@@ -70,12 +105,12 @@ export default function SongResult({ status, song }: SongResultProps) {
                 <img 
                   src={song.albumArt} 
                   alt={`${song.album} album art`}
-                  className="w-32 h-32 rounded-lg object-cover"
+                  className="w-32 h-32 rounded-lg object-cover flex-shrink-0"
                   data-testid="img-album-art"
                 />
               )}
               
-              <div className="space-y-3">
+              <div className="space-y-3 flex-1">
                 <div>
                   <p className="text-sm text-muted-foreground">Title</p>
                   <p className="text-lg font-medium" data-testid="text-song-title">{song.title}</p>
@@ -104,9 +139,64 @@ export default function SongResult({ status, song }: SongResultProps) {
                       Clean
                     </Badge>
                   )}
+                  {song.spotifyUrl && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      asChild
+                      data-testid="button-spotify-link"
+                    >
+                      <a href={song.spotifyUrl} target="_blank" rel="noopener noreferrer" className="gap-2">
+                        <ExternalLink className="h-4 w-4" />
+                        Open in Spotify
+                      </a>
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
+
+            <Separator />
+            {evaluation ? (
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold mb-2">AI Evaluation</h4>
+                  <p className="text-muted-foreground" data-testid="text-evaluation-reasoning">
+                    {evaluation.reasoning}
+                  </p>
+                </div>
+
+                {evaluation.positives.length > 0 && (
+                  <div>
+                    <h5 className="text-sm font-semibold mb-2 text-success">Positive Aspects</h5>
+                    <ul className="list-disc list-inside space-y-1" data-testid="list-positives">
+                      {evaluation.positives.map((positive, index) => (
+                        <li key={index} className="text-sm text-muted-foreground">
+                          {positive}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {evaluation.concerns.length > 0 && (
+                  <div>
+                    <h5 className="text-sm font-semibold mb-2 text-destructive">Concerns</h5>
+                    <ul className="list-disc list-inside space-y-1" data-testid="list-concerns">
+                      {evaluation.concerns.map((concern, index) => (
+                        <li key={index} className="text-sm text-muted-foreground">
+                          {concern}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground" data-testid="text-evaluation-unavailable">
+                <p className="italic">AI evaluation temporarily unavailable. Please review the song manually based on the information above.</p>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

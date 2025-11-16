@@ -48,9 +48,31 @@ export default function HomePage() {
       if (!data.found) {
         setSearchResult({ status: "not-found" });
       } else {
+        // Determine status based on AI evaluation or fallback to explicit flag
+        let status: SongStatus = "safe";
+        if (data.evaluation) {
+          if (data.evaluation.recommendation === "approved") {
+            status = "safe";
+          } else if (data.evaluation.recommendation === "not-recommended") {
+            status = "unsafe";
+          } else {
+            status = "review";
+          }
+        } else {
+          // Fallback when AI evaluation is unavailable
+          if (data.song.explicit) {
+            status = "unsafe";
+          } else {
+            status = "review"; // Mark for manual review when AI is unavailable
+          }
+        }
+
         setSearchResult({
-          status: data.song.explicit ? "unsafe" : "safe",
-          song: data.song,
+          status,
+          song: {
+            ...data.song,
+            evaluation: data.evaluation,
+          },
         });
       }
     },
