@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { Pool } from "@neondatabase/serverless";
 import { eq } from "drizzle-orm";
+import ws from "ws";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -75,7 +76,10 @@ export class DbStorage implements IStorage {
     if (!connectionString) {
       throw new Error("DATABASE_URL environment variable is not set");
     }
-    const pool = new Pool({ connectionString });
+    const pool = new Pool({ 
+      connectionString,
+      webSocketConstructor: ws as any
+    });
     this.db = drizzle(pool);
   }
 
