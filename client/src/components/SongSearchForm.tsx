@@ -18,7 +18,7 @@ export default function SongSearchForm({ onSearch, isLoading }: SongSearchFormPr
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (songTitle.trim()) {
+    if (songTitle.trim() && artist.trim()) {
       songTitleRef.current?.closeSuggestions();
       artistRef.current?.closeSuggestions();
       onSearch?.(songTitle, artist);
@@ -59,7 +59,7 @@ export default function SongSearchForm({ onSearch, isLoading }: SongSearchFormPr
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="artist">Artist (Optional)</Label>
+            <Label htmlFor="artist">Artist *</Label>
             <AutocompleteInput
               ref={artistRef}
               id="artist"
@@ -72,14 +72,14 @@ export default function SongSearchForm({ onSearch, isLoading }: SongSearchFormPr
               data-testid="input-artist"
             />
             <p className="text-sm text-muted-foreground">
-              Adding the artist helps find the correct song
+              Artist name is required to find the correct song
             </p>
           </div>
 
           <Button 
             type="submit" 
             className="w-full gap-2 h-11"
-            disabled={!songTitle.trim() || isLoading}
+            disabled={!songTitle.trim() || !artist.trim() || isLoading}
             data-testid="button-search"
           >
             <Search className="h-5 w-5" />
