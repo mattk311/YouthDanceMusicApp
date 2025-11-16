@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
-import AutocompleteInput from "./AutocompleteInput";
+import AutocompleteInput, { type AutocompleteInputRef } from "./AutocompleteInput";
 
 interface SongSearchFormProps {
   onSearch?: (songTitle: string, artist: string) => void;
@@ -13,10 +13,14 @@ interface SongSearchFormProps {
 export default function SongSearchForm({ onSearch, isLoading }: SongSearchFormProps) {
   const [songTitle, setSongTitle] = useState("");
   const [artist, setArtist] = useState("");
+  const songTitleRef = useRef<AutocompleteInputRef>(null);
+  const artistRef = useRef<AutocompleteInputRef>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (songTitle.trim()) {
+      songTitleRef.current?.closeSuggestions();
+      artistRef.current?.closeSuggestions();
       onSearch?.(songTitle, artist);
     }
   };
@@ -34,6 +38,7 @@ export default function SongSearchForm({ onSearch, isLoading }: SongSearchFormPr
           <div className="space-y-2">
             <Label htmlFor="song-title">Song Title *</Label>
             <AutocompleteInput
+              ref={songTitleRef}
               id="song-title"
               placeholder="Enter song title..."
               value={songTitle}
@@ -56,6 +61,7 @@ export default function SongSearchForm({ onSearch, isLoading }: SongSearchFormPr
           <div className="space-y-2">
             <Label htmlFor="artist">Artist (Optional)</Label>
             <AutocompleteInput
+              ref={artistRef}
               id="artist"
               placeholder="Enter artist name..."
               value={artist}

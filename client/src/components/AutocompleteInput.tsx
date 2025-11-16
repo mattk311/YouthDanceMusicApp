@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +21,11 @@ interface AutocompleteInputProps {
   "data-testid"?: string;
 }
 
-export default function AutocompleteInput({
+export interface AutocompleteInputRef {
+  closeSuggestions: () => void;
+}
+
+const AutocompleteInput = forwardRef<AutocompleteInputRef, AutocompleteInputProps>(({
   id,
   placeholder,
   value,
@@ -30,13 +34,24 @@ export default function AutocompleteInput({
   disabled,
   type,
   "data-testid": testId,
-}: AutocompleteInputProps) {
+}, ref) => {
   const { toast } = useToast();
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
+
+  useImperativeHandle(ref, () => ({
+    closeSuggestions: () => {
+      setIsOpen(false);
+      setSuggestions([]);
+      setSelectedIndex(-1);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    },
+  }));
 
   useEffect(() => {
     if (timeoutRef.current) {
@@ -184,4 +199,8 @@ export default function AutocompleteInput({
       )}
     </div>
   );
-}
+});
+
+AutocompleteInput.displayName = "AutocompleteInput";
+
+export default AutocompleteInput;

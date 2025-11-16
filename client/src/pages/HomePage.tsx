@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import Header from "@/components/Header";
@@ -14,6 +14,7 @@ export default function HomePage() {
     status: SongStatus;
     song?: SongData;
   } | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const { data: user } = useQuery<User>({
     queryKey: ["/api/auth/user"],
@@ -75,6 +76,14 @@ export default function HomePage() {
           },
         });
       }
+
+      // Scroll to results after a short delay to allow render
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ 
+          behavior: "smooth", 
+          block: "start" 
+        });
+      }, 100);
     },
     onError: (error: Error) => {
       toast({
@@ -116,7 +125,11 @@ export default function HomePage() {
           />
           
           {searchResult && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div 
+              ref={resultsRef}
+              className="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              data-testid="search-results"
+            >
               <SongResult 
                 status={searchResult.status}
                 song={searchResult.song}
