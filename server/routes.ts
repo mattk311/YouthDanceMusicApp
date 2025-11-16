@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import passport from "./auth";
-import { searchSong } from "./spotify";
+import { searchSong, getAutocompleteSuggestions } from "./spotify";
 import type { User } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -41,6 +41,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(req.user as User);
     } else {
       res.status(401).json({ error: "Not authenticated" });
+    }
+  });
+
+  // Autocomplete suggestions route
+  app.get("/api/songs/autocomplete", requireAuth, async (req, res) => {
+    try {
+      const { query, type } = req.query;
+
+      if (!query || typeof query !== "string") {
+        return res.json({ suggestions: [] });
+      }
+
+      const validType = type === "artist" ? "artist" : "track";
+      const suggestions = await getAutocompleteSuggestions(query, validType);
+
+      res.json({ suggestions });
+    } catch (error) {
+      console.error("Error getting autocomplete suggestions:", error);
+      res.status(500).json({ error: "Failed to fetch suggestions" });
     }
   });
 

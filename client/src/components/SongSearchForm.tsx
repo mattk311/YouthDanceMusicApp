@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
+import AutocompleteInput from "./AutocompleteInput";
 
 interface SongSearchFormProps {
   onSearch?: (songTitle: string, artist: string) => void;
@@ -33,24 +33,36 @@ export default function SongSearchForm({ onSearch, isLoading }: SongSearchFormPr
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="song-title">Song Title *</Label>
-            <Input
+            <AutocompleteInput
               id="song-title"
               placeholder="Enter song title..."
               value={songTitle}
-              onChange={(e) => setSongTitle(e.target.value)}
+              onChange={setSongTitle}
+              onSelect={(suggestion) => {
+                setSongTitle(suggestion.name);
+                if (suggestion.artist) {
+                  setArtist(suggestion.artist);
+                }
+              }}
               disabled={isLoading}
+              type="track"
               data-testid="input-song-title"
             />
+            <p className="text-sm text-muted-foreground">
+              Start typing and wait 3 seconds for suggestions
+            </p>
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="artist">Artist (Optional)</Label>
-            <Input
+            <AutocompleteInput
               id="artist"
               placeholder="Enter artist name..."
               value={artist}
-              onChange={(e) => setArtist(e.target.value)}
+              onChange={setArtist}
+              onSelect={(suggestion) => setArtist(suggestion.name)}
               disabled={isLoading}
+              type="artist"
               data-testid="input-artist"
             />
             <p className="text-sm text-muted-foreground">
