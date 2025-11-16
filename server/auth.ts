@@ -7,12 +7,26 @@ if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
   throw new Error("Google OAuth credentials not found in environment variables");
 }
 
+// Get the full callback URL from environment or construct it
+const getCallbackURL = () => {
+  // In Replit development, use the REPLIT_DEV_DOMAIN
+  if (process.env.REPLIT_DEV_DOMAIN) {
+    return `https://${process.env.REPLIT_DEV_DOMAIN}/auth/google/callback`;
+  }
+  
+  // Fallback for local development
+  return "http://localhost:5000/auth/google/callback";
+};
+
+const callbackURL = getCallbackURL();
+console.log(`[Auth] Google OAuth callback URL: ${callbackURL}`);
+
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "/auth/google/callback",
+      callbackURL: callbackURL,
     },
     async (_accessToken, _refreshToken, profile, done) => {
       try {
