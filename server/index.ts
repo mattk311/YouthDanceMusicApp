@@ -1,21 +1,51 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import pg from "pg";
 import passport from "./auth";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// Trust proxy for secure cookies behind Replit's proxy
+app.set("trust proxy", 1);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Session store configuration
+const PgSession = connectPgSimple(session);
+let sessionStore: session.Store | undefined;
+
+if (process.env.DATABASE_URL) {
+  const pgPool = new pg.Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+  });
+
+  sessionStore = new PgSession({
+    pool: pgPool,
+    tableName: "session",
+    createTableIfMissing: true,
+  });
+
+  log("Using PostgreSQL session store");
+} else {
+  log("Using MemoryStore (development only - not suitable for production)");
+}
 
 // Session configuration
 app.use(
   session({
+    store: sessionStore,
     secret: process.env.SESSION_SECRET || "church-dance-music-checker-secret",
     resave: false,
     saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "lax",
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     },
   })

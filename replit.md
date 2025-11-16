@@ -113,8 +113,13 @@ Preferred communication style: Simple, everyday language.
 
 **Session Management**
 - express-session for server-side session storage
-- connect-pg-simple available for PostgreSQL session store (when database is added)
-- Environment variable: `SESSION_SECRET` (defaults to hardcoded value)
+- PostgreSQL-backed session store using connect-pg-simple (production-ready)
+- Automatic session table creation on first run
+- Supports Autoscale deployments with multiple instances
+- Sessions persist across server restarts and scale horizontally
+- Falls back to MemoryStore in development without DATABASE_URL
+- Trust proxy configured for secure cookies behind Replit's HTTPS proxy
+- Environment variables: `SESSION_SECRET`, `DATABASE_URL` (required for production)
 
 **Development Tools**
 - Replit-specific plugins for development experience (cartographer, dev banner, runtime error overlay)
@@ -167,6 +172,12 @@ After finding a song on Spotify, the application automatically evaluates it usin
 - Console logging shows cache hits/misses for monitoring
 
 ## Recent Changes (November 16, 2025)
+- **Fixed production deployment**: Implemented PostgreSQL-backed session store for Autoscale deployments
+  - Replaced MemoryStore with connect-pg-simple for production scalability
+  - Sessions now persist across server restarts and multiple instances
+  - Automatic session table creation on first deployment
+  - Trust proxy configured for secure cookies behind HTTPS
+  - Made artist field required in song search form
 - **Added Google AdSense integration**: Application is now monetization-ready with strategic ad placements
   - Implemented reusable AdSense component with TypeScript support
   - Added 3 ad units: top banner, in-content rectangle, and footer banner
