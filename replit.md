@@ -64,10 +64,13 @@ Preferred communication style: Simple, everyday language.
 - All endpoints require authentication
 
 **Data Layer**
-- In-memory storage implementation (MemStorage) for user data during development
-- Drizzle ORM configured for PostgreSQL migration path
-- User schema with Google ID, email, name, and avatar fields
-- Storage abstraction interface (IStorage) for future database integration
+- PostgreSQL database with Neon serverless driver for persistent storage
+- Drizzle ORM for type-safe database operations
+- Database storage implementation (DbStorage) with automatic fallback to MemStorage if DATABASE_URL not available
+- Storage abstraction interface (IStorage) for user and song CRUD operations
+- User schema: Google ID, email, name, and avatar fields
+- Song schema: search key, song/artist/album metadata, Spotify data, AI evaluation results, and timestamps
+- Database caching for song searches and AI evaluations to reduce API calls and improve performance
 
 ### External Dependencies
 
@@ -99,12 +102,14 @@ Preferred communication style: Simple, everyday language.
 - Environment variables: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
 - Callback URL: `/auth/google/callback`
 
-**Database (Configured but Not Active)**
+**Database (Active - PostgreSQL)**
 - Drizzle ORM with PostgreSQL dialect configured via `drizzle.config.ts`
-- Schema defined in `shared/schema.ts` with users table
+- Schema defined in `shared/schema.ts` with users and songs tables
 - Neon serverless driver (`@neondatabase/serverless`) for PostgreSQL connection
 - Migration directory: `./migrations`
-- Environment variable: `DATABASE_URL` (currently throws error if missing, indicating preparation for future use)
+- Environment variable: `DATABASE_URL` (required for database operations)
+- Songs table stores: search key (unique), song metadata, Spotify URLs, AI evaluation results, and creation timestamps
+- Database-first caching strategy: check cache before calling external APIs
 
 **Session Management**
 - express-session for server-side session storage
@@ -153,7 +158,18 @@ After finding a song on Spotify, the application automatically evaluates it usin
 2. **Not Recommended** (Red) - Song contains concerning content or explicit material
 3. **Review Needed** (Yellow) - Minor concerns that church leaders should be aware of before making final decision
 
+### Database Caching System
+- All song searches and AI evaluations are cached in PostgreSQL database
+- Search key format: `{lowercase_title}|{lowercase_artist}` for consistent lookups
+- Cache-first strategy: database checked before calling Spotify or AI APIs
+- Cached data includes: song metadata, album art, Spotify URLs, explicit flag, AI recommendations, reasoning, concerns, and positives
+- Significantly reduces API calls and improves response times for repeated searches
+- Console logging shows cache hits/misses for monitoring
+
 ## Recent Changes (November 16, 2025)
+- **Added database caching system**: PostgreSQL database now caches all song searches and AI evaluation results
+- **Implemented DbStorage class**: Database storage layer with Drizzle ORM for persistent song and user data
+- **Cache-first architecture**: Backend checks database before calling Spotify/AI APIs, reducing costs and improving speed
 - Added OpenAI integration using Replit AI Integrations (GPT-5 model)
 - Implemented comprehensive AI evaluation system for song appropriateness
 - Enhanced result display to show AI reasoning, concerns, and positive aspects

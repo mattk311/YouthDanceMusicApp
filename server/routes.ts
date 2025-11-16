@@ -4,6 +4,7 @@ import passport from "./auth";
 import { searchSong, getAutocompleteSuggestions } from "./spotify";
 import { evaluateSongForLDSChurchDance } from "./ai-evaluator";
 import type { User } from "@shared/schema";
+import { storage } from "./storage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication middleware
@@ -73,10 +74,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Title is required" });
       }
 
-      const track = await searchSong(
-        title,
-        artist && typeof artist === "string" ? artist : undefined
-      );
+      const artistName = artist && typeof artist === "string" ? artist : "";
+      const searchKey = `${title.toLowerCase().trim()}|${artistName.toLowerCase().trim()}`;
+
+      // Check database cache first
+      const cachedSong = await storage.getSongBySearchKey(searchKey);
+      
+      if (cachedSong) {
+        console.log(`Cache hit for: ${title} - ${artistName}`);
+        return res.json({
+          found: true,
+          cached: true,
+          song: {
+            title: cachedSong.songName,
+            artist: cachedSong.artistName,
+            album: cachedSong.albumName,
+            albumArt: cachedSong.albumArt,
+            explicit: cachedSong.isExplicit,
+            spotifyUrl: cachedSong.spotifyUrl,
+          },
+          evaluation: cachedSong.aiUnavailable ? null : {
+            appropriate: cachedSong.aiRecommendation === "approved",
+            reasoning: cachedSong.aiReasoning,
+            concerns: cachedSong.aiConcerns || [],
+            positives: cachedSong.aiPositives || [],
+            recommendation: cachedSong.aiRecommendation,
+          },
+        });
+      }
+
+      console.log(`Cache miss for: ${title} - ${artistName}, fetching from Spotify...`);
+
+      // Not in cache, search Spotify
+      const track = await searchSong(title, artistName || undefined);
 
       if (!track) {
         return res.json({ found: false });
@@ -84,6 +114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Evaluate the song with AI (with graceful fallback)
       let evaluation = null;
+      let aiUnavailable = false;
       try {
         evaluation = await evaluateSongForLDSChurchDance(
           track.name,
@@ -92,11 +123,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
       } catch (aiError) {
         console.error("AI evaluation failed, continuing without evaluation:", aiError);
-        // Continue with song data even if AI fails
+        aiUnavailable = true;
+      }
+
+      // Save to database
+      try {
+        await storage.createSong({
+          searchKey,
+          songName: track.name,
+          artistName: track.artists.join(", "),
+          albumName: track.album || null,
+          albumArt: track.albumArt || null,
+          spotifyUrl: track.spotifyUrl || null,
+          isExplicit: track.explicit || false,
+          aiRecommendation: evaluation?.recommendation || null,
+          aiReasoning: evaluation?.reasoning || null,
+          aiConcerns: evaluation?.concerns || null,
+          aiPositives: evaluation?.positives || null,
+          aiUnavailable,
+        });
+        console.log(`Saved to cache: ${track.name} - ${track.artists.join(", ")}`);
+      } catch (dbError) {
+        console.error("Failed to save song to database:", dbError);
+        // Continue even if caching fails
       }
 
       res.json({
         found: true,
+        cached: false,
         song: {
           title: track.name,
           artist: track.artists.join(", "),
