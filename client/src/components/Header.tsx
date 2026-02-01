@@ -29,18 +29,31 @@ export default function Header({ user, onLogout }: HeaderProps) {
               <Music className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold" data-testid="text-app-title">Church Dance Music Checker</h1>
-              <p className="text-sm text-muted-foreground">Safe song verification for youth events</p>
+              <h1
+                className="text-xl font-semibold"
+                data-testid="text-app-title"
+              >
+                Church Youth Dance Music Checker
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Safe song verification for youth events
+              </p>
             </div>
           </div>
 
           {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="gap-2" data-testid="button-user-menu">
+                <Button
+                  variant="ghost"
+                  className="gap-2"
+                  data-testid="button-user-menu"
+                >
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback>
+                      {user.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
                   <span className="hidden sm:inline">{user.name}</span>
                 </Button>
@@ -49,11 +62,16 @@ export default function Header({ user, onLogout }: HeaderProps) {
                 <DropdownMenuLabel>
                   <div className="flex flex-col gap-1">
                     <p className="text-sm font-medium">{user.name}</p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {user.email}
+                    </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={onLogout} data-testid="button-logout">
+                <DropdownMenuItem
+                  onClick={onLogout}
+                  data-testid="button-logout"
+                >
                   Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>

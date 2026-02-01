@@ -1,4 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Music } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
@@ -23,9 +29,9 @@ export default function LoginCard() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button 
+          <Button
             onClick={handleGoogleLogin}
-            variant="outline" 
+            variant="outline"
             className="w-full gap-2 h-11"
             data-testid="button-google-login"
           >
@@ -33,7 +39,7 @@ export default function LoginCard() {
             Continue with Google
           </Button>
           <p className="text-center text-sm text-muted-foreground px-4">
-            We use Google authentication to securely connect to Spotify and verify song content
+            Register / Login Google authentication to verify song content
           </p>
         </CardContent>
       </Card>
