@@ -1,8 +1,8 @@
-# Church Dance Music Safety Checker
+# Youth Dance Music
 
 ## Overview
 
-The Church Dance Music Safety Checker is a web application designed to help LDS (Latter-day Saint) church youth event coordinators verify whether songs are appropriate for church dances. The application integrates with Spotify's API to search for songs and uses AI-powered evaluation to assess appropriateness based on lyrics, artist background, and alignment with LDS church values.
+Youth Dance Music is a web application designed to help youth event coordinators verify whether songs are appropriate for dances. The application integrates with Spotify's API to search for songs and uses AI-powered evaluation to assess appropriateness based on lyrics, artist background, and alignment with LDS church values.
 
 The system features Google OAuth authentication, real-time song search with autocomplete suggestions, AI-powered content evaluation using OpenAI GPT-5, and a clean, youth-friendly interface built with Material Design 3 principles.
 

@@ -1,3 +1,4 @@
+import { Link } from "wouter";
 import {
   Card,
   CardContent,
@@ -41,6 +42,11 @@ export default function LoginCard() {
           <p className="text-center text-sm text-muted-foreground px-4">
             Register / Login Google authentication to verify song content
           </p>
+          <div className="text-center pt-2">
+            <Link href="/privacy" className="text-xs text-muted-foreground hover:underline" data-testid="link-privacy">
+              Privacy Policy
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
+import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import Header from "@/components/Header";
@@ -167,6 +168,17 @@ export default function HomePage() {
               className="max-w-full"
             />
           </div>
+
+          {/* Footer */}
+          <footer className="mt-8 pt-6 border-t text-center">
+            <Link 
+              href="/privacy" 
+              className="text-sm text-muted-foreground hover:underline"
+              data-testid="link-footer-privacy"
+            >
+              Privacy Policy
+            </Link>
+          </footer>
         </div>
       </main>
     </div>

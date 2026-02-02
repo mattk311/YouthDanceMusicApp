@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import LoginCard from "@/components/LoginCard";
 import HomePage from "@/pages/HomePage";
+import PrivacyPage from "@/pages/PrivacyPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -23,12 +24,18 @@ function Router() {
   }
 
   if (!user) {
-    return <LoginCard />;
+    return (
+      <Switch>
+        <Route path="/privacy" component={PrivacyPage} />
+        <Route component={LoginCard} />
+      </Switch>
+    );
   }
 
   return (
     <Switch>
       <Route path="/" component={HomePage} />
+      <Route path="/privacy" component={PrivacyPage} />
       <Route component={NotFound} />
     </Switch>
   );

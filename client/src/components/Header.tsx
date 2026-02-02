@@ -33,7 +33,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
                 className="text-xl font-semibold"
                 data-testid="text-app-title"
               >
-                Church Youth Dance Music Checker
+                Youth Dance Music
               </h1>
               <p className="text-sm text-muted-foreground">
                 Safe song verification for youth events
