@@ -4,22 +4,33 @@ import { storage } from "./storage";
 import type { User } from "@shared/schema";
 
 if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-  throw new Error("Google OAuth credentials not found in environment variables");
+  throw new Error(
+    "Google OAuth credentials not found in environment variables",
+  );
 }
 
 // Get the full callback URL from environment or construct it
 const getCallbackURL = () => {
   // Check if we have a custom OAuth callback URL configured (for published deployments)
-  if (process.env.OAUTH_CALLBACK_URL) {
-    return process.env.OAUTH_CALLBACK_URL;
-  }
-  
+  //if (process.env.OAUTH_CALLBACK_URL) {
+  //  return process.env.OAUTH_CALLBACK_URL;
+  //}
+
   // In Replit development/preview, use the REPLIT_DEV_DOMAIN
-  if (process.env.REPLIT_DEV_DOMAIN) {
-    return `https://${process.env.REPLIT_DEV_DOMAIN}/auth/google/callback`;
-  }
-  
+  //if (process.env.REPLIT_DEV_DOMAIN) {
+  //return //`https://${process.env.REPLIT_DEV_DOMAIN}/auth/google/callback`;
+  //}
+
   // Fallback for local development
+  //return "http://localhost:5000/auth/google/callback";
+  //return baseUrl + "/auth/google/callback";
+  if (process.env.PUBLIC_URL) {
+    return process.env.PUBLIC_URL + "/auth/google/callback";
+  } else {
+    if (process.env.OAUTH_CALLBACK_URL) {
+      return process.env.OAUTH_CALLBACK_URL;
+    }
+  }
   return "http://localhost:5000/auth/google/callback";
 };
 
@@ -55,8 +66,8 @@ passport.use(
       } catch (error) {
         return done(error as Error);
       }
-    }
-  )
+    },
+  ),
 );
 
 passport.serializeUser((user, done) => {
