@@ -3,7 +3,7 @@ import OpenAI from "openai";
 // This is using Replit's AI Integrations service, which provides OpenAI-compatible API access without requiring your own OpenAI API key.
 const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
 });
 
 export interface SongEvaluation {
@@ -17,7 +17,7 @@ export interface SongEvaluation {
 export async function evaluateSongForLDSChurchDance(
   songTitle: string,
   artist: string,
-  album?: string
+  album?: string,
 ): Promise<SongEvaluation> {
   const prompt = `You are an expert advisor helping LDS (Latter-day Saint) church leaders evaluate whether a song is appropriate for a church youth dance.
 
@@ -71,20 +71,26 @@ Provide only the JSON response, no additional text.`;
       response_format: { type: "json_object" },
     });
 
-    const content = response.choices[0]?.message?.content;
+    var content = response.choices[0]?.message?.content;
+
     if (!content) {
       throw new Error("No response from AI");
+    } else {
+      //get rid of the name of the church
+      content = content.replaceAll("LDS", "");
     }
 
     const evaluation = JSON.parse(content) as SongEvaluation;
-    
+
     // Validate the response has required fields
     if (
       typeof evaluation.appropriate !== "boolean" ||
       typeof evaluation.reasoning !== "string" ||
       !Array.isArray(evaluation.concerns) ||
       !Array.isArray(evaluation.positives) ||
-      !["approved", "not-recommended", "review-needed"].includes(evaluation.recommendation)
+      !["approved", "not-recommended", "review-needed"].includes(
+        evaluation.recommendation,
+      )
     ) {
       throw new Error("Invalid evaluation format from AI");
     }
