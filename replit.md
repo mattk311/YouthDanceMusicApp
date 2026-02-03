@@ -171,7 +171,17 @@ After finding a song on Spotify, the application automatically evaluates it usin
 - Significantly reduces API calls and improves response times for repeated searches
 - Console logging shows cache hits/misses for monitoring
 
-## Recent Changes (November 16, 2025)
+## Recent Changes (February 3, 2026)
+- **Added subscription system with Stripe**: $9.99/month subscription for unlimited song searches
+  - Free users limited to 10 searches per day (resets daily)
+  - Subscribers get unlimited searches
+  - Stripe integration with webhook for subscription status sync
+  - UsageBadge component shows remaining searches in header
+  - SubscriptionCard component for upgrade flow
+  - Stripe checkout and customer portal integration
+  - Database tracking of subscription status, daily counts, and Stripe customer/subscription IDs
+
+## Previous Changes (November 16, 2025)
 - **Fixed production deployment**: Implemented PostgreSQL-backed session store for Autoscale deployments
   - Replaced MemoryStore with connect-pg-simple for production scalability
   - Sessions now persist across server restarts and multiple instances
