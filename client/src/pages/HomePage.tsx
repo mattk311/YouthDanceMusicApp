@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { Link } from "wouter";
+import { useState, useRef, useEffect } from "react";
+import { Link, useSearch } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import Header from "@/components/Header";
@@ -7,20 +7,54 @@ import SongSearchForm from "@/components/SongSearchForm";
 import SongResult, { type SongStatus, type SongData } from "@/components/SongResult";
 import ThemeToggle from "@/components/ThemeToggle";
 import AdSense from "@/components/AdSense";
+import UsageBadge from "@/components/UsageBadge";
+import SubscriptionCard from "@/components/SubscriptionCard";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { User } from "@shared/schema";
+
+interface UsageData {
+  count: number;
+  remaining: number;
+  isSubscribed: boolean;
+}
 
 export default function HomePage() {
   const { toast } = useToast();
+  const search = useSearch();
   const [searchResult, setSearchResult] = useState<{
     status: SongStatus;
     song?: SongData;
   } | null>(null);
+  const [showSubscription, setShowSubscription] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const { data: user } = useQuery<User>({
     queryKey: ["/api/auth/user"],
   });
+
+  const { data: usage, refetch: refetchUsage } = useQuery<UsageData>({
+    queryKey: ["/api/usage"],
+    enabled: !!user,
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    if (params.get("subscription") === "success") {
+      toast({
+        title: "Subscription activated!",
+        description: "You now have unlimited song searches.",
+      });
+      refetchUsage();
+      window.history.replaceState({}, "", "/");
+    } else if (params.get("subscription") === "cancelled") {
+      toast({
+        title: "Subscription cancelled",
+        description: "You can subscribe anytime to get unlimited searches.",
+      });
+      window.history.replaceState({}, "", "/");
+    }
+  }, [search, toast, refetchUsage]);
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -48,10 +82,13 @@ export default function HomePage() {
       return response.json();
     },
     onSuccess: (data) => {
+      if (data.usage) {
+        refetchUsage();
+      }
+      
       if (!data.found) {
         setSearchResult({ status: "not-found" });
       } else {
-        // Determine status based on AI evaluation or fallback to explicit flag
         let status: SongStatus = "safe";
         if (data.evaluation) {
           if (data.evaluation.recommendation === "approved") {
@@ -62,11 +99,10 @@ export default function HomePage() {
             status = "review";
           }
         } else {
-          // Fallback when AI evaluation is unavailable
           if (data.song.explicit) {
             status = "unsafe";
           } else {
-            status = "review"; // Mark for manual review when AI is unavailable
+            status = "review";
           }
         }
 
@@ -79,7 +115,6 @@ export default function HomePage() {
         });
       }
 
-      // Scroll to results after a short delay to allow render
       setTimeout(() => {
         resultsRef.current?.scrollIntoView({ 
           behavior: "smooth", 
@@ -88,6 +123,9 @@ export default function HomePage() {
       }, 100);
     },
     onError: (error: Error) => {
+      if (error.message.includes("Daily search limit")) {
+        setShowSubscription(true);
+      }
       toast({
         title: "Search failed",
         description: error.message,
@@ -106,9 +144,25 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="flex items-center justify-end p-4 border-b bg-card">
+      <div className="flex items-center justify-end gap-3 p-4 border-b bg-card">
+        {usage && (
+          <UsageBadge 
+            remaining={usage.remaining} 
+            isSubscribed={usage.isSubscribed}
+            onClick={() => setShowSubscription(true)}
+          />
+        )}
         <ThemeToggle />
       </div>
+
+      <Dialog open={showSubscription} onOpenChange={setShowSubscription}>
+        <DialogContent className="sm:max-w-md p-0 border-0 bg-transparent shadow-none">
+          <SubscriptionCard 
+            isSubscribed={usage?.isSubscribed || false} 
+            onClose={() => setShowSubscription(false)}
+          />
+        </DialogContent>
+      </Dialog>
       
       <Header 
         user={user ? {

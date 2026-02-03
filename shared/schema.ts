@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, integer, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -9,6 +9,11 @@ export const users = pgTable("users", {
   email: text("email").notNull(),
   name: text("name").notNull(),
   avatar: text("avatar"),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  subscriptionStatus: text("subscription_status"),
+  dailySearchCount: integer("daily_search_count").default(0),
+  lastSearchDate: date("last_search_date"),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
