@@ -179,9 +179,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       res.json({ url: session.url });
-    } catch (error) {
-      console.error("Error creating checkout session:", error);
-      res.status(500).json({ error: "Failed to create checkout session" });
+    } catch (error: any) {
+      console.error("Error creating checkout session:", error?.message || error);
+      console.error("Full error:", JSON.stringify(error, null, 2));
+      res.status(500).json({ error: error?.message || "Failed to create checkout session" });
     }
   });
 
