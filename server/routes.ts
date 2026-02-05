@@ -305,6 +305,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const updatedUsage = await storage.getUserSearchUsage(user.id);
         
+        // Extract track ID from Spotify URL (format: https://open.spotify.com/track/TRACK_ID)
+        const spotifyTrackId = cachedSong.spotifyUrl?.split('/track/')[1]?.split('?')[0] || null;
+        
         return res.json({
           found: true,
           cached: true,
@@ -315,6 +318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             albumArt: cachedSong.albumArt,
             explicit: cachedSong.isExplicit,
             spotifyUrl: cachedSong.spotifyUrl,
+            spotifyTrackId,
           },
           evaluation: cachedSong.aiUnavailable ? null : {
             appropriate: cachedSong.aiRecommendation === "approved",
@@ -392,6 +396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           albumArt: track.albumArt,
           explicit: track.explicit,
           spotifyUrl: track.spotifyUrl,
+          spotifyTrackId: track.id,
         },
         evaluation: evaluation ? {
           appropriate: evaluation.appropriate,

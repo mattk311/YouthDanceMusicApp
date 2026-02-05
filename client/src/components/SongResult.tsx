@@ -8,9 +8,12 @@ import {
   ExternalLink,
   Music,
   Users,
+  ListPlus,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useState } from "react";
 
 export type SongStatus = "safe" | "unsafe" | "not-found" | "review";
 
@@ -31,15 +34,29 @@ export interface SongData {
   albumArt?: string;
   explicit: boolean;
   spotifyUrl?: string;
+  spotifyTrackId?: string;
   evaluation?: SongEvaluation;
 }
 
 interface SongResultProps {
   status: SongStatus;
   song?: SongData;
+  isSubscribed?: boolean;
+  onAddToQueue?: (trackId: string) => Promise<void>;
 }
 
-export default function SongResult({ status, song }: SongResultProps) {
+export default function SongResult({ status, song, isSubscribed, onAddToQueue }: SongResultProps) {
+  const [isAddingToQueue, setIsAddingToQueue] = useState(false);
+
+  const handleAddToQueue = async () => {
+    if (!song?.spotifyTrackId || !onAddToQueue) return;
+    setIsAddingToQueue(true);
+    try {
+      await onAddToQueue(song.spotifyTrackId);
+    } finally {
+      setIsAddingToQueue(false);
+    }
+  };
   if (status === "not-found") {
     return (
       <Card className="border-l-4 border-l-warning">
@@ -190,6 +207,23 @@ export default function SongResult({ status, song }: SongResultProps) {
                         <ExternalLink className="h-4 w-4" />
                         Open in Spotify
                       </a>
+                    </Button>
+                  )}
+                  {isSubscribed && song.spotifyTrackId && onAddToQueue && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddToQueue}
+                      disabled={isAddingToQueue}
+                      className="gap-2"
+                      data-testid="button-add-to-queue"
+                    >
+                      {isAddingToQueue ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ListPlus className="h-4 w-4" />
+                      )}
+                      Add to Queue
                     </Button>
                   )}
                 </div>
