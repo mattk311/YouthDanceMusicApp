@@ -1,4 +1,11 @@
-import { type User, type InsertUser, type Song, type InsertSong, users, songs } from "@shared/schema";
+import {
+  type User,
+  type InsertUser,
+  type Song,
+  type InsertSong,
+  users,
+  songs,
+} from "@shared/schema";
 import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
@@ -11,8 +18,12 @@ export interface IStorage {
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   getSongBySearchKey(searchKey: string): Promise<Song | undefined>;
   createSong(song: InsertSong): Promise<Song>;
-  incrementDailySearchCount(userId: string): Promise<{ count: number; isNewDay: boolean }>;
-  getUserSearchUsage(userId: string): Promise<{ count: number; remaining: number; isSubscribed: boolean }>;
+  incrementDailySearchCount(
+    userId: string,
+  ): Promise<{ count: number; isNewDay: boolean }>;
+  getUserSearchUsage(
+    userId: string,
+  ): Promise<{ count: number; remaining: number; isSubscribed: boolean }>;
 }
 
 export class MemStorage implements IStorage {
@@ -36,8 +47,8 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { 
-      ...insertUser, 
+    const user: User = {
+      ...insertUser,
       id,
       avatar: insertUser.avatar || null,
       stripeCustomerId: null,
@@ -50,7 +61,10 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+  async updateUser(
+    id: string,
+    updates: Partial<User>,
+  ): Promise<User | undefined> {
     const user = this.users.get(id);
     if (!user) return undefined;
     const updated = { ...user, ...updates };
@@ -82,30 +96,35 @@ export class MemStorage implements IStorage {
     return song;
   }
 
-  async incrementDailySearchCount(userId: string): Promise<{ count: number; isNewDay: boolean }> {
+  async incrementDailySearchCount(
+    userId: string,
+  ): Promise<{ count: number; isNewDay: boolean }> {
     const user = this.users.get(userId);
     if (!user) return { count: 0, isNewDay: false };
-    
-    const today = new Date().toISOString().split('T')[0];
+
+    const today = new Date().toISOString().split("T")[0];
     const isNewDay = user.lastSearchDate !== today;
-    
+
     const newCount = isNewDay ? 1 : (user.dailySearchCount || 0) + 1;
     user.dailySearchCount = newCount;
     user.lastSearchDate = today;
     this.users.set(userId, user);
-    
+
     return { count: newCount, isNewDay };
   }
 
-  async getUserSearchUsage(userId: string): Promise<{ count: number; remaining: number; isSubscribed: boolean }> {
+  async getUserSearchUsage(
+    userId: string,
+  ): Promise<{ count: number; remaining: number; isSubscribed: boolean }> {
     const user = this.users.get(userId);
-    if (!user) return { count: 0, remaining: 10, isSubscribed: false };
-    
-    const isSubscribed = user.subscriptionStatus === 'active';
-    const today = new Date().toISOString().split('T')[0];
-    const count = user.lastSearchDate === today ? (user.dailySearchCount || 0) : 0;
-    const remaining = isSubscribed ? -1 : Math.max(0, 10 - count);
-    
+    if (!user) return { count: 0, remaining: 3, isSubscribed: false };
+
+    const isSubscribed = user.subscriptionStatus === "active";
+    const today = new Date().toISOString().split("T")[0];
+    const count =
+      user.lastSearchDate === today ? user.dailySearchCount || 0 : 0;
+    const remaining = isSubscribed ? -1 : Math.max(0, 3 - count);
+
     return { count, remaining, isSubscribed };
   }
 }
@@ -137,14 +156,14 @@ export class DbStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const result = await this.db
-      .insert(users)
-      .values(insertUser)
-      .returning();
+    const result = await this.db.insert(users).values(insertUser).returning();
     return result[0];
   }
 
-  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+  async updateUser(
+    id: string,
+    updates: Partial<User>,
+  ): Promise<User | undefined> {
     const result = await this.db
       .update(users)
       .set(updates)
@@ -162,44 +181,48 @@ export class DbStorage implements IStorage {
   }
 
   async createSong(insertSong: InsertSong): Promise<Song> {
-    const result = await this.db
-      .insert(songs)
-      .values(insertSong)
-      .returning();
+    const result = await this.db.insert(songs).values(insertSong).returning();
     return result[0];
   }
 
-  async incrementDailySearchCount(userId: string): Promise<{ count: number; isNewDay: boolean }> {
+  async incrementDailySearchCount(
+    userId: string,
+  ): Promise<{ count: number; isNewDay: boolean }> {
     const user = await this.getUser(userId);
     if (!user) return { count: 0, isNewDay: false };
-    
-    const today = new Date().toISOString().split('T')[0];
+
+    const today = new Date().toISOString().split("T")[0];
     const isNewDay = user.lastSearchDate !== today;
-    
+
     const newCount = isNewDay ? 1 : (user.dailySearchCount || 0) + 1;
-    
+
     await this.db
       .update(users)
-      .set({ 
+      .set({
         dailySearchCount: newCount,
         lastSearchDate: today,
       })
       .where(eq(users.id, userId));
-    
+
     return { count: newCount, isNewDay };
   }
 
-  async getUserSearchUsage(userId: string): Promise<{ count: number; remaining: number; isSubscribed: boolean }> {
+  async getUserSearchUsage(
+    userId: string,
+  ): Promise<{ count: number; remaining: number; isSubscribed: boolean }> {
     const user = await this.getUser(userId);
-    if (!user) return { count: 0, remaining: 10, isSubscribed: false };
-    
-    const isSubscribed = user.subscriptionStatus === 'active';
-    const today = new Date().toISOString().split('T')[0];
-    const count = user.lastSearchDate === today ? (user.dailySearchCount || 0) : 0;
-    const remaining = isSubscribed ? -1 : Math.max(0, 10 - count);
-    
+    if (!user) return { count: 0, remaining: 3, isSubscribed: false };
+
+    const isSubscribed = user.subscriptionStatus === "active";
+    const today = new Date().toISOString().split("T")[0];
+    const count =
+      user.lastSearchDate === today ? user.dailySearchCount || 0 : 0;
+    const remaining = isSubscribed ? -1 : Math.max(0, 3 - count);
+
     return { count, remaining, isSubscribed };
   }
 }
 
-export const storage = process.env.DATABASE_URL ? new DbStorage() : new MemStorage();
+export const storage = process.env.DATABASE_URL
+  ? new DbStorage()
+  : new MemStorage();
