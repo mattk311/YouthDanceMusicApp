@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import passport from "./auth";
 import { searchSong, getAutocompleteSuggestions } from "./spotify";
+import { addToQueue, isSpotifyUserConnected } from "./spotifyUserClient";
 import { evaluateSongForLDSChurchDance } from "./ai-evaluator";
 import type { User } from "@shared/schema";
 import { storage } from "./storage";
@@ -208,6 +209,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating portal session:", error);
       res.status(500).json({ error: "Failed to create portal session" });
+    }
+  });
+
+  // Check Spotify connection status
+  app.get("/api/spotify/status", requireAuth, async (req, res) => {
+    try {
+      const connected = await isSpotifyUserConnected();
+      res.json({ connected });
+    } catch (error) {
+      res.json({ connected: false });
+    }
+  });
+
+  // Add song to Spotify queue (pro users only)
+  app.post("/api/spotify/queue", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const { trackId } = req.body;
+
+      if (!trackId || typeof trackId !== "string") {
+        return res.status(400).json({ error: "Track ID is required" });
+      }
+
+      // Check if user is subscribed
+      const usage = await storage.getUserSearchUsage(user.id);
+      if (!usage.isSubscribed) {
+        return res.status(403).json({ 
+          error: "Pro subscription required",
+          message: "Adding songs to your Spotify queue is a Pro feature. Subscribe for $9.99/month!"
+        });
+      }
+
+      // Add to queue using Spotify URI format
+      const spotifyUri = `spotify:track:${trackId}`;
+      await addToQueue(spotifyUri);
+
+      res.json({ success: true, message: "Song added to your Spotify queue!" });
+    } catch (error: any) {
+      console.error("Error adding to queue:", error);
+      
+      // Handle specific Spotify errors
+      if (error.message?.includes("No active device")) {
+        return res.status(400).json({ 
+          error: "No active Spotify device",
+          message: "Please open Spotify on a device and start playing something first."
+        });
+      }
+      
+      if (error.message?.includes("Spotify not connected")) {
+        return res.status(400).json({ 
+          error: "Spotify not connected",
+          message: "The app owner needs to connect their Spotify account."
+        });
+      }
+
+      res.status(500).json({ error: "Failed to add song to queue" });
     }
   });
 
