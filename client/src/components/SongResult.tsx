@@ -6,6 +6,8 @@ import {
   AlertCircle,
   AlertTriangle,
   ExternalLink,
+  Music,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -18,6 +20,8 @@ export interface SongEvaluation {
   concerns: string[];
   positives: string[];
   recommendation: "approved" | "not-recommended" | "review-needed";
+  danceType?: "fast" | "slow";
+  isLineDance?: boolean;
 }
 
 export interface SongData {
@@ -195,6 +199,29 @@ export default function SongResult({ status, song }: SongResultProps) {
             <Separator />
             {evaluation ? (
               <div className="space-y-4">
+                {evaluation.danceType && (
+                  <div className="flex flex-wrap gap-2" data-testid="dance-type-badges">
+                    <Badge 
+                      variant="outline" 
+                      className="gap-1"
+                      data-testid={`badge-dance-${evaluation.danceType}`}
+                    >
+                      <Music className="h-3 w-3" />
+                      {evaluation.danceType === "fast" ? "Fast Dance" : "Slow Dance"}
+                    </Badge>
+                    {evaluation.danceType === "fast" && evaluation.isLineDance && (
+                      <Badge 
+                        variant="outline" 
+                        className="gap-1 bg-primary/10 text-primary border-primary/20"
+                        data-testid="badge-line-dance"
+                      >
+                        <Users className="h-3 w-3" />
+                        Line Dance
+                      </Badge>
+                    )}
+                  </div>
+                )}
+                
                 <div>
                   <h4 className="font-semibold mb-2">AI Evaluation</h4>
                   <p

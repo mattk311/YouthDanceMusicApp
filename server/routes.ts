@@ -265,6 +265,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             concerns: cachedSong.aiConcerns || [],
             positives: cachedSong.aiPositives || [],
             recommendation: cachedSong.aiRecommendation,
+            danceType: cachedSong.aiDanceType || null,
+            isLineDance: cachedSong.aiIsLineDance || false,
           },
           usage: updatedUsage,
         });
@@ -307,6 +309,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           aiReasoning: evaluation?.reasoning || null,
           aiConcerns: evaluation?.concerns || null,
           aiPositives: evaluation?.positives || null,
+          aiDanceType: evaluation?.danceType || null,
+          aiIsLineDance: evaluation?.isLineDance || false,
           aiUnavailable,
         });
         console.log(`Saved to cache: ${track.name} - ${track.artists.join(", ")}`);
@@ -338,6 +342,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           concerns: evaluation.concerns,
           positives: evaluation.positives,
           recommendation: evaluation.recommendation,
+          danceType: evaluation.danceType,
+          isLineDance: evaluation.isLineDance,
         } : null,
         usage: updatedUsage,
       });

@@ -12,6 +12,8 @@ export interface SongEvaluation {
   concerns: string[];
   positives: string[];
   recommendation: "approved" | "not-recommended" | "review-needed";
+  danceType: "fast" | "slow";
+  isLineDance: boolean;
 }
 
 export async function evaluateSongForLDSChurchDance(
@@ -47,13 +49,19 @@ Consider these specific factors:
 
 4. **Context**: Even if some concerns exist, is this song widely considered acceptable in mainstream settings?
 
+5. **Dance Type**: Based on the song's tempo and rhythm:
+   - Is this a fast dance song or a slow dance song?
+   - If it's a fast dance song, is it commonly used as a line dance song (like the Cupid Shuffle, Cha Cha Slide, Cotton Eye Joe, etc.)?
+
 Provide your evaluation in the following JSON format:
 {
   "appropriate": boolean (true if the song is appropriate, false if not),
   "reasoning": "A clear, balanced explanation of your decision (2-3 sentences)",
   "concerns": ["list of specific concerns found, if any"],
   "positives": ["list of positive aspects, if any"],
-  "recommendation": "approved" | "not-recommended" | "review-needed"
+  "recommendation": "approved" | "not-recommended" | "review-needed",
+  "danceType": "fast" | "slow",
+  "isLineDance": boolean (true only if it's a fast song commonly used for line dancing)
 }
 
 Be balanced and fair in your assessment. Consider that:
@@ -90,7 +98,9 @@ Provide only the JSON response, no additional text.`;
       !Array.isArray(evaluation.positives) ||
       !["approved", "not-recommended", "review-needed"].includes(
         evaluation.recommendation,
-      )
+      ) ||
+      !["fast", "slow"].includes(evaluation.danceType) ||
+      typeof evaluation.isLineDance !== "boolean"
     ) {
       throw new Error("Invalid evaluation format from AI");
     }

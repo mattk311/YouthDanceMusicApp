@@ -36,6 +36,8 @@ export const songs = pgTable("songs", {
   aiReasoning: text("ai_reasoning"),
   aiConcerns: text("ai_concerns").array(),
   aiPositives: text("ai_positives").array(),
+  aiDanceType: text("ai_dance_type"),
+  aiIsLineDance: boolean("ai_is_line_dance").default(false),
   aiUnavailable: boolean("ai_unavailable").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

@@ -172,6 +172,9 @@ After finding a song on Spotify, the application automatically evaluates it usin
 - Console logging shows cache hits/misses for monitoring
 
 ## Recent Changes (February 5, 2026)
+- **Added dance type classification**: AI now evaluates whether songs are fast or slow dance songs, and identifies line dance songs (like Cupid Shuffle, Cha Cha Slide, etc.)
+  - New badges display dance type (Fast Dance/Slow Dance) and Line Dance indicator
+  - Database schema updated with aiDanceType and aiIsLineDance fields
 - **Fixed Stripe configuration**: Now uses STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY environment secrets directly instead of Replit connector API
 
 ## Previous Changes (February 3, 2026)
