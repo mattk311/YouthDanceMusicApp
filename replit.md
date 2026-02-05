@@ -171,7 +171,10 @@ After finding a song on Spotify, the application automatically evaluates it usin
 - Significantly reduces API calls and improves response times for repeated searches
 - Console logging shows cache hits/misses for monitoring
 
-## Recent Changes (February 3, 2026)
+## Recent Changes (February 5, 2026)
+- **Fixed Stripe configuration**: Now uses STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY environment secrets directly instead of Replit connector API
+
+## Previous Changes (February 3, 2026)
 - **Added subscription system with Stripe**: $9.99/month subscription for unlimited song searches
   - Free users limited to 10 searches per day (resets daily)
   - Subscribers get unlimited searches
@@ -180,6 +183,7 @@ After finding a song on Spotify, the application automatically evaluates it usin
   - SubscriptionCard component for upgrade flow
   - Stripe checkout and customer portal integration
   - Database tracking of subscription status, daily counts, and Stripe customer/subscription IDs
+  - **Note**: Stripe API keys are stored as secrets (STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY) - not using Replit connector
 
 ## Previous Changes (November 16, 2025)
 - **Fixed production deployment**: Implemented PostgreSQL-backed session store for Autoscale deployments
