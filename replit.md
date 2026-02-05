@@ -172,6 +172,10 @@ After finding a song on Spotify, the application automatically evaluates it usin
 - Console logging shows cache hits/misses for monitoring
 
 ## Recent Changes (February 5, 2026)
+- **Added Spotify queue integration for Pro users**: Subscribers can now add songs directly to their Spotify playback queue
+  - Uses Replit Spotify connector for authenticated user operations
+  - New "Add to Queue" button appears on song results for Pro subscribers
+  - Requires active Spotify playback device
 - **Added dance type classification**: AI now evaluates whether songs are fast or slow dance songs, and identifies line dance songs (like Cupid Shuffle, Cha Cha Slide, etc.)
   - New badges display dance type (Fast Dance/Slow Dance) and Line Dance indicator
   - Database schema updated with aiDanceType and aiIsLineDance fields
