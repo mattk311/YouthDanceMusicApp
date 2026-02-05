@@ -146,6 +146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         WHERE p.name = 'Youth Dance Music Pro' 
         AND pr.active = true 
         AND p.active = true
+        ORDER BY pr.created DESC
         LIMIT 1
       `);
       
