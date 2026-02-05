@@ -32,8 +32,15 @@ async function getAccessToken(): Promise<TokenSet> {
     ? 'depl ' + process.env.WEB_REPL_RENEWAL 
     : null;
 
+  console.log('[Spotify] Connector check - hostname:', !!hostname, 'hasToken:', !!xReplitToken);
+
   if (!xReplitToken || !hostname) {
-    throw new Error('Spotify user authentication not available');
+    console.error('[Spotify] Missing connector environment variables:', {
+      hasHostname: !!hostname,
+      hasReplIdentity: !!process.env.REPL_IDENTITY,
+      hasWebReplRenewal: !!process.env.WEB_REPL_RENEWAL
+    });
+    throw new Error('Spotify queue not available in this environment');
   }
 
   const response = await fetch(

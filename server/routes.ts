@@ -264,7 +264,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      res.status(500).json({ error: "Failed to add song to queue" });
+      if (error.message?.includes("not available in this environment")) {
+        return res.status(400).json({ 
+          error: "Feature not available",
+          message: "Spotify queue is only available in the development environment. This feature is coming soon to production!"
+        });
+      }
+
+      res.status(500).json({ error: "Failed to add song to queue", message: error.message || "Unknown error" });
     }
   });
 
