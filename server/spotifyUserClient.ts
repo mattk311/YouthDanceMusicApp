@@ -15,6 +15,7 @@ interface TokenSet {
 async function getAccessToken(): Promise<TokenSet> {
   // Check if we have valid cached tokens
   if (cachedTokens && cachedTokens.expiresAt > Date.now()) {
+    console.log('[Spotify] Using cached tokens');
     return {
       accessToken: cachedTokens.accessToken,
       clientId: cachedTokens.clientId,
@@ -23,6 +24,7 @@ async function getAccessToken(): Promise<TokenSet> {
     };
   }
   
+  console.log('[Spotify] Fetching fresh tokens from connector');
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY 
     ? 'repl ' + process.env.REPL_IDENTITY 
@@ -47,9 +49,14 @@ async function getAccessToken(): Promise<TokenSet> {
   const data = await response.json();
   connectionSettings = data.items?.[0];
   
+  console.log('[Spotify] Connector response received, has items:', !!data.items?.length);
+  
   if (!connectionSettings) {
+    console.error('[Spotify] No connection settings found in response');
     throw new Error('Spotify not connected - no connection settings found');
   }
+  
+  console.log('[Spotify] Connection settings keys:', Object.keys(connectionSettings?.settings || {}));
   
   // Extract tokens from various possible locations in the response
   const oauthCreds = connectionSettings?.settings?.oauth?.credentials;
@@ -97,11 +104,27 @@ export async function getSpotifyUserClient() {
 }
 
 export async function addToQueue(spotifyUri: string): Promise<void> {
-  const spotify = await getSpotifyUserClient();
+  console.log('[Spotify] Adding to queue:', spotifyUri);
   
-  // Add track to the user's playback queue
-  // The URI should be in format: spotify:track:TRACK_ID
-  await spotify.player.addItemToPlaybackQueue(spotifyUri);
+  try {
+    const spotify = await getSpotifyUserClient();
+    
+    // Add track to the user's playback queue
+    // The URI should be in format: spotify:track:TRACK_ID
+    await spotify.player.addItemToPlaybackQueue(spotifyUri);
+    console.log('[Spotify] Successfully added to queue');
+  } catch (error: any) {
+    console.error('[Spotify] Error adding to queue:', error.message || error);
+    
+    // Re-throw with more context
+    if (error?.body?.error?.reason === 'NO_ACTIVE_DEVICE') {
+      throw new Error('No active device - Please open Spotify and start playing something first');
+    }
+    if (error?.status === 404 || error?.message?.includes('NO_ACTIVE_DEVICE')) {
+      throw new Error('No active device - Please open Spotify and start playing something first');
+    }
+    throw error;
+  }
 }
 
 export async function isSpotifyUserConnected(): Promise<boolean> {
