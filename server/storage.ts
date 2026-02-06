@@ -56,6 +56,9 @@ export class MemStorage implements IStorage {
       subscriptionStatus: null,
       dailySearchCount: 0,
       lastSearchDate: null,
+      spotifyAccessToken: null,
+      spotifyRefreshToken: null,
+      spotifyTokenExpiresAt: null,
     };
     this.users.set(id, user);
     return user;
@@ -90,6 +93,8 @@ export class MemStorage implements IStorage {
       aiReasoning: insertSong.aiReasoning || null,
       aiConcerns: insertSong.aiConcerns || null,
       aiPositives: insertSong.aiPositives || null,
+      aiDanceType: insertSong.aiDanceType || null,
+      aiIsLineDance: insertSong.aiIsLineDance || false,
       aiUnavailable: insertSong.aiUnavailable || false,
     };
     this.songs.set(insertSong.searchKey, song);

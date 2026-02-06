@@ -38,6 +38,11 @@ export default function HomePage() {
     enabled: !!user,
   });
 
+  const { data: spotifyStatus } = useQuery<{ connected: boolean }>({
+    queryKey: ["/api/spotify/status"],
+    enabled: !!user,
+  });
+
   useEffect(() => {
     const params = new URLSearchParams(search);
     if (params.get("subscription") === "success") {
@@ -51,6 +56,22 @@ export default function HomePage() {
       toast({
         title: "Subscription cancelled",
         description: "You can subscribe anytime to get unlimited searches.",
+      });
+      window.history.replaceState({}, "", "/");
+    }
+
+    if (params.get("spotify_connected") === "true") {
+      toast({
+        title: "Spotify connected",
+        description: "You can now add songs to your playlists.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/spotify/status"] });
+      window.history.replaceState({}, "", "/");
+    } else if (params.get("spotify_error")) {
+      toast({
+        title: "Spotify connection failed",
+        description: "Could not connect to Spotify. Please try again.",
+        variant: "destructive",
       });
       window.history.replaceState({}, "", "/");
     }
@@ -200,6 +221,8 @@ export default function HomePage() {
                 status={searchResult.status}
                 song={searchResult.song}
                 isSubscribed={usage?.isSubscribed}
+                spotifyConnected={spotifyStatus?.connected}
+                onConnectSpotify={() => window.location.href = "/auth/spotify"}
               />
               
               {/* In-Content Ad (after results) */}

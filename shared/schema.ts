@@ -14,6 +14,9 @@ export const users = pgTable("users", {
   subscriptionStatus: text("subscription_status"),
   dailySearchCount: integer("daily_search_count").default(0),
   lastSearchDate: date("last_search_date"),
+  spotifyAccessToken: text("spotify_access_token"),
+  spotifyRefreshToken: text("spotify_refresh_token"),
+  spotifyTokenExpiresAt: timestamp("spotify_token_expires_at"),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({

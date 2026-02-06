@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import passport from "./auth";
 import { searchSong, getAutocompleteSuggestions } from "./spotify";
-import { addToQueue, isSpotifyUserConnected } from "./spotifyUserClient";
+import { getSpotifyAuthUrl, exchangeSpotifyCode, isSpotifyConnected, getUserPlaylists, addTrackToPlaylist, disconnectSpotify } from "./spotifyUserClient";
 import { evaluateSongForLDSChurchDance } from "./ai-evaluator";
 import type { User } from "@shared/schema";
 import { storage } from "./storage";
@@ -212,66 +212,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Check Spotify connection status
-  app.get("/api/spotify/status", requireAuth, async (req, res) => {
+  // Spotify OAuth - start authorization
+  app.get("/auth/spotify", requireAuth, (req, res) => {
     try {
-      const connected = await isSpotifyUserConnected();
-      res.json({ connected });
+      const user = req.user as User;
+      const authUrl = getSpotifyAuthUrl(user.id);
+      res.redirect(authUrl);
     } catch (error) {
-      res.json({ connected: false });
+      console.error("Error starting Spotify auth:", error);
+      res.redirect("/?spotify_error=auth_failed");
     }
   });
 
-  // Add song to Spotify queue (pro users only)
-  app.post("/api/spotify/queue", requireAuth, async (req, res) => {
+  // Spotify OAuth - callback
+  app.get("/auth/spotify/callback", requireAuth, async (req, res) => {
+    try {
+      const { code, state, error } = req.query;
+      
+      if (error) {
+        console.error("[Spotify OAuth] Authorization denied:", error);
+        return res.redirect("/?spotify_error=denied");
+      }
+
+      const user = req.user as User;
+      if (!code || typeof code !== "string" || state !== user.id) {
+        return res.redirect("/?spotify_error=invalid");
+      }
+
+      await exchangeSpotifyCode(code, user.id);
+      res.redirect("/?spotify_connected=true");
+    } catch (error) {
+      console.error("Error in Spotify callback:", error);
+      res.redirect("/?spotify_error=token_failed");
+    }
+  });
+
+  // Check user's Spotify connection status
+  app.get("/api/spotify/status", requireAuth, async (req, res) => {
+    const user = req.user as User;
+    const freshUser = await storage.getUser(user.id);
+    res.json({ connected: freshUser ? isSpotifyConnected(freshUser) : false });
+  });
+
+  // Disconnect Spotify
+  app.post("/api/spotify/disconnect", requireAuth, async (req, res) => {
     try {
       const user = req.user as User;
+      await disconnectSpotify(user.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error disconnecting Spotify:", error);
+      res.status(500).json({ error: "Failed to disconnect Spotify" });
+    }
+  });
+
+  // Get user's Spotify playlists
+  app.get("/api/spotify/playlists", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const freshUser = await storage.getUser(user.id);
+      if (!freshUser || !isSpotifyConnected(freshUser)) {
+        return res.status(400).json({ error: "Spotify not connected" });
+      }
+      const playlists = await getUserPlaylists(freshUser);
+      res.json({ playlists });
+    } catch (error: any) {
+      console.error("Error fetching playlists:", error);
+      if (error.message?.includes("expired") || error.message?.includes("reconnect")) {
+        return res.status(401).json({ error: error.message });
+      }
+      res.status(500).json({ error: "Failed to fetch playlists" });
+    }
+  });
+
+  // Add track to a playlist
+  app.post("/api/spotify/playlists/:playlistId/add", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const { playlistId } = req.params;
       const { trackId } = req.body;
 
       if (!trackId || typeof trackId !== "string") {
         return res.status(400).json({ error: "Track ID is required" });
       }
 
-      // Check if user is subscribed
-      const usage = await storage.getUserSearchUsage(user.id);
-      if (!usage.isSubscribed) {
-        return res.status(403).json({ 
-          error: "Pro subscription required",
-          message: "Adding songs to your Spotify queue is a Pro feature. Subscribe for $9.99/month!"
-        });
+      const freshUser = await storage.getUser(user.id);
+      if (!freshUser || !isSpotifyConnected(freshUser)) {
+        return res.status(400).json({ error: "Spotify not connected" });
       }
 
-      // Add to queue using Spotify URI format
-      const spotifyUri = `spotify:track:${trackId}`;
-      await addToQueue(spotifyUri);
-
-      res.json({ success: true, message: "Song added to your Spotify queue!" });
+      await addTrackToPlaylist(freshUser, playlistId, trackId);
+      res.json({ success: true, message: "Song added to playlist!" });
     } catch (error: any) {
-      console.error("Error adding to queue:", error);
-      
-      // Handle specific Spotify errors
-      if (error.message?.includes("No active device")) {
-        return res.status(400).json({ 
-          error: "No active Spotify device",
-          message: "Please open Spotify on a device and start playing something first."
-        });
+      console.error("Error adding to playlist:", error);
+      if (error.message?.includes("expired") || error.message?.includes("reconnect")) {
+        return res.status(401).json({ error: error.message });
       }
-      
-      if (error.message?.includes("Spotify not connected")) {
-        return res.status(400).json({ 
-          error: "Spotify not connected",
-          message: "The app owner needs to connect their Spotify account."
-        });
-      }
-
-      if (error.message?.includes("not available in this environment")) {
-        return res.status(400).json({ 
-          error: "Feature not available",
-          message: "Spotify queue is only available in the development environment. This feature is coming soon to production!"
-        });
-      }
-
-      res.status(500).json({ error: "Failed to add song to queue", message: error.message || "Unknown error" });
+      res.status(500).json({ error: "Failed to add song to playlist" });
     }
   });
 

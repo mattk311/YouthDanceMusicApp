@@ -8,9 +8,12 @@ import {
   ExternalLink,
   Music,
   Users,
+  ListPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useState } from "react";
+import PlaylistPicker from "./PlaylistPicker";
 
 export type SongStatus = "safe" | "unsafe" | "not-found" | "review";
 
@@ -39,9 +42,13 @@ interface SongResultProps {
   status: SongStatus;
   song?: SongData;
   isSubscribed?: boolean;
+  spotifyConnected?: boolean;
+  onConnectSpotify?: () => void;
 }
 
-export default function SongResult({ status, song, isSubscribed }: SongResultProps) {
+export default function SongResult({ status, song, isSubscribed, spotifyConnected, onConnectSpotify }: SongResultProps) {
+  const [playlistPickerOpen, setPlaylistPickerOpen] = useState(false);
+
   if (status === "not-found") {
     return (
       <Card className="border-l-4 border-l-warning">
@@ -194,6 +201,31 @@ export default function SongResult({ status, song, isSubscribed }: SongResultPro
                       </a>
                     </Button>
                   )}
+                  {song.spotifyTrackId && (
+                    spotifyConnected ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPlaylistPickerOpen(true)}
+                        className="gap-2"
+                        data-testid="button-add-to-playlist"
+                      >
+                        <ListPlus className="h-4 w-4" />
+                        Add to Playlist
+                      </Button>
+                    ) : onConnectSpotify ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={onConnectSpotify}
+                        className="gap-2"
+                        data-testid="button-connect-spotify"
+                      >
+                        <ListPlus className="h-4 w-4" />
+                        Connect Spotify
+                      </Button>
+                    ) : null
+                  )}
                 </div>
               </div>
             </div>
@@ -290,6 +322,15 @@ export default function SongResult({ status, song, isSubscribed }: SongResultPro
           </div>
         </div>
       </CardContent>
+
+      {song?.spotifyTrackId && (
+        <PlaylistPicker
+          open={playlistPickerOpen}
+          onOpenChange={setPlaylistPickerOpen}
+          trackId={song.spotifyTrackId}
+          songTitle={song.title}
+        />
+      )}
     </Card>
   );
 }

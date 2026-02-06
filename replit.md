@@ -171,11 +171,17 @@ After finding a song on Spotify, the application automatically evaluates it usin
 - Significantly reduces API calls and improves response times for repeated searches
 - Console logging shows cache hits/misses for monitoring
 
-## Recent Changes (February 5, 2026)
-- **Added Spotify queue integration for Pro users**: Subscribers can now add songs directly to their Spotify playback queue
-  - Uses Replit Spotify connector for authenticated user operations
-  - New "Add to Queue" button appears on song results for Pro subscribers
-  - Requires active Spotify playback device
+## Recent Changes (February 6, 2026)
+- **Added "Add to Playlist" feature**: Users can connect their own Spotify account and add songs to their playlists
+  - Individual user Spotify OAuth flow (authorization code grant)
+  - Users see "Connect Spotify" button on search results; after connecting, it becomes "Add to Playlist"
+  - Playlist picker dialog shows all user playlists with images and track counts
+  - Token refresh handled automatically; stored securely server-side
+  - Database schema: spotifyAccessToken, spotifyRefreshToken, spotifyTokenExpiresAt fields on users table
+  - Production redirect URI configurable via SPOTIFY_REDIRECT_URI env var
+  - Spotify app requires redirect URI: https://youthdancemusic.com/auth/spotify/callback
+
+## Previous Changes (February 5, 2026)
 - **Added dance type classification**: AI now evaluates whether songs are fast or slow dance songs, and identifies line dance songs (like Cupid Shuffle, Cha Cha Slide, etc.)
   - New badges display dance type (Fast Dance/Slow Dance) and Line Dance indicator
   - Database schema updated with aiDanceType and aiIsLineDance fields
