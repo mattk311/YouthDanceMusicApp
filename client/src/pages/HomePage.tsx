@@ -134,32 +134,8 @@ export default function HomePage() {
     },
   });
 
-  const addToQueueMutation = useMutation({
-    mutationFn: async (trackId: string) => {
-      const response = await apiRequest("POST", "/api/spotify/queue", { trackId });
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Added to queue!",
-        description: "The song has been added to your Spotify queue.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Failed to add to queue",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
   const handleSearch = (songTitle: string, artist: string) => {
     searchMutation.mutate({ title: songTitle, artist });
-  };
-
-  const handleAddToQueue = async (trackId: string) => {
-    await addToQueueMutation.mutateAsync(trackId);
   };
 
   const handleLogout = () => {
@@ -224,7 +200,6 @@ export default function HomePage() {
                 status={searchResult.status}
                 song={searchResult.song}
                 isSubscribed={usage?.isSubscribed}
-                onAddToQueue={handleAddToQueue}
               />
               
               {/* In-Content Ad (after results) */}
