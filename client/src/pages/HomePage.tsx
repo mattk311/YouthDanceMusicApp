@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useSearch } from "wouter";
+import { Link, useSearch, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import Header from "@/components/Header";
@@ -11,6 +11,8 @@ import UsageBadge from "@/components/UsageBadge";
 import SubscriptionCard from "@/components/SubscriptionCard";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { TrendingUp } from "lucide-react";
 import type { User } from "@shared/schema";
 
 interface UsageData {
@@ -165,7 +167,15 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="flex items-center justify-end gap-3 p-4 border-b bg-card">
+      <div className="flex items-center justify-end gap-3 p-4 border-b bg-card flex-wrap">
+        {usage?.isSubscribed && (
+          <Link href="/popular">
+            <Button variant="ghost" size="sm" className="gap-2" data-testid="link-popular-songs">
+              <TrendingUp className="h-4 w-4" />
+              Popular Songs
+            </Button>
+          </Link>
+        )}
         {usage && (
           <UsageBadge 
             remaining={usage.remaining} 

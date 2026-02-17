@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import LoginCard from "@/components/LoginCard";
 import HomePage from "@/pages/HomePage";
 import PrivacyPage from "@/pages/PrivacyPage";
+import PopularSongsPage from "@/pages/PopularSongsPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -35,6 +36,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={HomePage} />
+      <Route path="/popular" component={PopularSongsPage} />
       <Route path="/privacy" component={PrivacyPage} />
       <Route component={NotFound} />
     </Switch>

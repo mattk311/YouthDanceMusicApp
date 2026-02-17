@@ -18,6 +18,8 @@ export interface IStorage {
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   getSongBySearchKey(searchKey: string): Promise<Song | undefined>;
   createSong(song: InsertSong): Promise<Song>;
+  incrementSongSearchCount(searchKey: string): Promise<void>;
+  getAllSongsOrderedBySearchCount(): Promise<Song[]>;
   incrementDailySearchCount(
     userId: string,
   ): Promise<{ count: number; isNewDay: boolean }>;
@@ -96,9 +98,24 @@ export class MemStorage implements IStorage {
       aiDanceType: insertSong.aiDanceType || null,
       aiIsLineDance: insertSong.aiIsLineDance || false,
       aiUnavailable: insertSong.aiUnavailable || false,
+      searchCount: 0,
     };
     this.songs.set(insertSong.searchKey, song);
     return song;
+  }
+
+  async incrementSongSearchCount(searchKey: string): Promise<void> {
+    const song = this.songs.get(searchKey);
+    if (song) {
+      song.searchCount = (song.searchCount || 0) + 1;
+      this.songs.set(searchKey, song);
+    }
+  }
+
+  async getAllSongsOrderedBySearchCount(): Promise<Song[]> {
+    return Array.from(this.songs.values()).sort(
+      (a, b) => (b.searchCount || 0) - (a.searchCount || 0),
+    );
   }
 
   async incrementDailySearchCount(
@@ -188,6 +205,21 @@ export class DbStorage implements IStorage {
   async createSong(insertSong: InsertSong): Promise<Song> {
     const result = await this.db.insert(songs).values(insertSong).returning();
     return result[0];
+  }
+
+  async incrementSongSearchCount(searchKey: string): Promise<void> {
+    await this.db
+      .update(songs)
+      .set({ searchCount: sql`${songs.searchCount} + 1` })
+      .where(eq(songs.searchKey, searchKey));
+  }
+
+  async getAllSongsOrderedBySearchCount(): Promise<Song[]> {
+    return await this.db
+      .select()
+      .from(songs)
+      .where(sql`${songs.searchCount} > 0`)
+      .orderBy(sql`${songs.searchCount} DESC`);
   }
 
   async incrementDailySearchCount(

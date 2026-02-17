@@ -342,6 +342,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (cachedSong) {
         console.log(`Cache hit for: ${title} - ${artistName}`);
         
+        // Increment song search count
+        await storage.incrementSongSearchCount(searchKey);
+        
         // Increment search count for non-subscribers
         if (!usage.isSubscribed) {
           await storage.incrementDailySearchCount(user.id);
@@ -419,6 +422,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           aiUnavailable,
         });
         console.log(`Saved to cache: ${track.name} - ${track.artists.join(", ")}`);
+        // Increment search count for the newly created song
+        await storage.incrementSongSearchCount(searchKey);
       } catch (dbError) {
         console.error("Failed to save song to database:", dbError);
       }
@@ -456,6 +461,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error searching song:", error);
       res.status(500).json({ error: "Failed to search song" });
+    }
+  });
+
+  // Popular songs - pro subscribers only
+  app.get("/api/songs/popular", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const usage = await storage.getUserSearchUsage(user.id);
+      
+      if (!usage.isSubscribed) {
+        return res.status(403).json({ 
+          error: "Pro subscription required",
+          message: "Popular songs is a Pro feature. Subscribe to access it!",
+        });
+      }
+
+      const allSongs = await storage.getAllSongsOrderedBySearchCount();
+      res.json({ songs: allSongs });
+    } catch (error) {
+      console.error("Error getting popular songs:", error);
+      res.status(500).json({ error: "Failed to get popular songs" });
     }
   });
 
