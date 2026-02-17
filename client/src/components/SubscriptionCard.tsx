@@ -131,7 +131,7 @@ export default function SubscriptionCard({ isSubscribed, onClose }: Subscription
         <ul className="space-y-2">
           <li className="flex items-center gap-2 text-sm">
             <Check className="h-4 w-4 text-primary" />
-            Unlimited song searches (vs 10/day free)
+            Unlimited song searches (vs 5/day free)
           </li>
           <li className="flex items-center gap-2 text-sm">
             <Check className="h-4 w-4 text-primary" />

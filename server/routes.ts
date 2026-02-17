@@ -11,7 +11,7 @@ import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 
-const FREE_DAILY_LIMIT = 10;
+const FREE_DAILY_LIMIT = 5;
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication middleware
@@ -327,7 +327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!usage.isSubscribed && usage.remaining <= 0) {
         return res.status(403).json({ 
           error: "Daily search limit reached",
-          message: "You've used all 10 free searches for today. Subscribe for unlimited searches!",
+          message: "You've used all 5 free searches for today. Subscribe for unlimited searches!",
           limitReached: true,
           usage
         });
