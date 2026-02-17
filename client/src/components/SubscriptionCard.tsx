@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Check, Loader2 } from "lucide-react";
@@ -12,17 +19,28 @@ interface SubscriptionCardProps {
   onClose?: () => void;
 }
 
-export default function SubscriptionCard({ isSubscribed, onClose }: SubscriptionCardProps) {
+export default function SubscriptionCard({
+  isSubscribed,
+  onClose,
+}: SubscriptionCardProps) {
   const { toast } = useToast();
 
-  const { data: priceData, isLoading: priceLoading } = useQuery<{ unit_amount: number; currency: string; product_name: string }>({
+  const { data: priceData, isLoading: priceLoading } = useQuery<{
+    unit_amount: number;
+    currency: string;
+    product_name: string;
+  }>({
     queryKey: ["/api/subscription/price"],
     retry: false,
   });
 
   const checkoutMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/subscription/checkout", {});
+      const response = await apiRequest(
+        "POST",
+        "/api/subscription/checkout",
+        {},
+      );
       return response.json();
     },
     onSuccess: (data) => {
@@ -58,7 +76,9 @@ export default function SubscriptionCard({ isSubscribed, onClose }: Subscription
     },
   });
 
-  const price = priceData?.unit_amount ? (priceData.unit_amount / 100).toFixed(2) : "9.99";
+  const price = priceData?.unit_amount
+    ? (priceData.unit_amount / 100).toFixed(2)
+    : "9.99";
 
   if (isSubscribed) {
     return (
@@ -71,9 +91,7 @@ export default function SubscriptionCard({ isSubscribed, onClose }: Subscription
             </Badge>
           </div>
           <CardTitle>You're a Pro!</CardTitle>
-          <CardDescription>
-            You have unlimited song searches
-          </CardDescription>
+          <CardDescription>You have unlimited song searches</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <ul className="space-y-2">
@@ -99,7 +117,9 @@ export default function SubscriptionCard({ isSubscribed, onClose }: Subscription
             disabled={portalMutation.isPending}
             data-testid="button-manage-subscription"
           >
-            {portalMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {portalMutation.isPending && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
             Manage Subscription
           </Button>
           {onClose && (
@@ -131,7 +151,7 @@ export default function SubscriptionCard({ isSubscribed, onClose }: Subscription
         <ul className="space-y-2">
           <li className="flex items-center gap-2 text-sm">
             <Check className="h-4 w-4 text-primary" />
-            Unlimited song searches (vs 5/day free)
+            Unlimited song searches
           </li>
           <li className="flex items-center gap-2 text-sm">
             <Check className="h-4 w-4 text-primary" />
@@ -154,7 +174,9 @@ export default function SubscriptionCard({ isSubscribed, onClose }: Subscription
           disabled={checkoutMutation.isPending || priceLoading}
           data-testid="button-subscribe"
         >
-          {checkoutMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {checkoutMutation.isPending && (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          )}
           Subscribe Now
         </Button>
         {onClose && (
