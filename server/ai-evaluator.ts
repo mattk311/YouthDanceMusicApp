@@ -47,9 +47,7 @@ Consider these specific factors:
    
 3. **Overall Message**: Does the song promote values consistent with LDS church standards?
 
-4. **Context**: Even if some concerns exist, is this song widely considered acceptable in mainstream settings?
-
-5. **Dance Type**: Based on the song's tempo and rhythm:
+4. **Dance Type**: Based on the song's tempo and rhythm:
    - Is this a fast dance song or a slow dance song?
    - If it's a fast dance song, is it commonly used as a line dance song (like the Cupid Shuffle, Cha Cha Slide, Cotton Eye Joe, etc.)?
 
@@ -69,6 +67,7 @@ Be balanced and fair in your assessment. Consider that:
 - Focus primarily on the actual song content
 - Use "review-needed" if there are minor concerns that church leaders should be aware of
 - Be specific about concerns rather than making general statements
+- If a song has any alcohol or drug references, it should be marked as "not-recommended"
 
 Provide only the JSON response, no additional text.`;
 
