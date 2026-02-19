@@ -79,6 +79,7 @@ export type Dance = typeof dances.$inferSelect;
 export const danceRequests = pgTable("dance_requests", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   danceId: varchar("dance_id").notNull(),
+  requesterUserId: varchar("requester_user_id").notNull(),
   requesterName: text("requester_name").notNull(),
   songTitle: text("song_title").notNull(),
   artistName: text("artist_name").notNull(),
