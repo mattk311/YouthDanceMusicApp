@@ -9,10 +9,11 @@ import ThemeToggle from "@/components/ThemeToggle";
 import AdSense from "@/components/AdSense";
 import UsageBadge from "@/components/UsageBadge";
 import SubscriptionCard from "@/components/SubscriptionCard";
+import NotificationBell from "@/components/NotificationBell";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Disc } from "lucide-react";
 import type { User } from "@shared/schema";
 
 interface UsageData {
@@ -176,6 +177,15 @@ export default function HomePage() {
             </Button>
           </Link>
         )}
+        {usage?.isSubscribed && (
+          <Link href="/dances">
+            <Button variant="ghost" size="sm" className="gap-2" data-testid="link-dance-management">
+              <Disc className="h-4 w-4" />
+              Dance Management
+            </Button>
+          </Link>
+        )}
+        {usage?.isSubscribed && <NotificationBell />}
         {usage && (
           <UsageBadge 
             remaining={usage.remaining} 

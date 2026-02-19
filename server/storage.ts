@@ -3,13 +3,31 @@ import {
   type InsertUser,
   type Song,
   type InsertSong,
+  type Dance,
+  type InsertDance,
+  type DanceRequest,
+  type InsertDanceRequest,
+  type Notification,
+  type InsertNotification,
   users,
   songs,
+  dances,
+  danceRequests,
+  notifications,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, desc, and } from "drizzle-orm";
+
+function generateDanceCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -26,15 +44,36 @@ export interface IStorage {
   getUserSearchUsage(
     userId: string,
   ): Promise<{ count: number; remaining: number; isSubscribed: boolean }>;
+
+  createDance(dance: InsertDance): Promise<Dance>;
+  getDancesByCreator(userId: string): Promise<Dance[]>;
+  getDanceByCode(code: string): Promise<Dance | undefined>;
+  getDanceById(id: string): Promise<Dance | undefined>;
+
+  createDanceRequest(request: InsertDanceRequest): Promise<DanceRequest>;
+  getDanceRequestsByDance(danceId: string): Promise<DanceRequest[]>;
+  updateDanceRequestStatus(id: string, status: string): Promise<DanceRequest | undefined>;
+
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getNotificationsByUser(userId: string): Promise<Notification[]>;
+  getUnreadNotificationCount(userId: string): Promise<number>;
+  markNotificationRead(id: string): Promise<void>;
+  markAllNotificationsRead(userId: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private songs: Map<string, Song>;
+  private danceMap: Map<string, Dance>;
+  private danceRequestMap: Map<string, DanceRequest>;
+  private notificationMap: Map<string, Notification>;
 
   constructor() {
     this.users = new Map();
     this.songs = new Map();
+    this.danceMap = new Map();
+    this.danceRequestMap = new Map();
+    this.notificationMap = new Map();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -149,6 +188,104 @@ export class MemStorage implements IStorage {
 
     return { count, remaining, isSubscribed };
   }
+
+  async createDance(insertDance: InsertDance): Promise<Dance> {
+    const id = randomUUID();
+    const code = generateDanceCode();
+    const dance: Dance = {
+      ...insertDance,
+      id,
+      code,
+      isActive: insertDance.isActive ?? true,
+      createdAt: new Date(),
+    };
+    this.danceMap.set(id, dance);
+    return dance;
+  }
+
+  async getDancesByCreator(userId: string): Promise<Dance[]> {
+    return Array.from(this.danceMap.values())
+      .filter((d) => d.creatorUserId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async getDanceByCode(code: string): Promise<Dance | undefined> {
+    return Array.from(this.danceMap.values()).find((d) => d.code === code);
+  }
+
+  async getDanceById(id: string): Promise<Dance | undefined> {
+    return this.danceMap.get(id);
+  }
+
+  async createDanceRequest(insertReq: InsertDanceRequest): Promise<DanceRequest> {
+    const id = randomUUID();
+    const req: DanceRequest = {
+      ...insertReq,
+      id,
+      status: insertReq.status || "pending",
+      albumArt: insertReq.albumArt || null,
+      spotifyUrl: insertReq.spotifyUrl || null,
+      createdAt: new Date(),
+    };
+    this.danceRequestMap.set(id, req);
+    return req;
+  }
+
+  async getDanceRequestsByDance(danceId: string): Promise<DanceRequest[]> {
+    return Array.from(this.danceRequestMap.values())
+      .filter((r) => r.danceId === danceId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async updateDanceRequestStatus(id: string, status: string): Promise<DanceRequest | undefined> {
+    const req = this.danceRequestMap.get(id);
+    if (!req) return undefined;
+    req.status = status;
+    this.danceRequestMap.set(id, req);
+    return req;
+  }
+
+  async createNotification(insertNotif: InsertNotification): Promise<Notification> {
+    const id = randomUUID();
+    const notif: Notification = {
+      ...insertNotif,
+      id,
+      isRead: insertNotif.isRead ?? false,
+      danceId: insertNotif.danceId || null,
+      requestId: insertNotif.requestId || null,
+      createdAt: new Date(),
+    };
+    this.notificationMap.set(id, notif);
+    return notif;
+  }
+
+  async getNotificationsByUser(userId: string): Promise<Notification[]> {
+    return Array.from(this.notificationMap.values())
+      .filter((n) => n.userId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async getUnreadNotificationCount(userId: string): Promise<number> {
+    return Array.from(this.notificationMap.values())
+      .filter((n) => n.userId === userId && !n.isRead).length;
+  }
+
+  async markNotificationRead(id: string): Promise<void> {
+    const notif = this.notificationMap.get(id);
+    if (notif) {
+      notif.isRead = true;
+      this.notificationMap.set(id, notif);
+    }
+  }
+
+  async markAllNotificationsRead(userId: string): Promise<void> {
+    this.notificationMap.forEach((notif, id) => {
+      if (notif.userId === userId) {
+        notif.isRead = true;
+        this.notificationMap.set(id, notif);
+      }
+    });
+  }
 }
 
 export class DbStorage implements IStorage {
@@ -257,6 +394,93 @@ export class DbStorage implements IStorage {
     const remaining = isSubscribed ? -1 : Math.max(0, 3 - count);
 
     return { count, remaining, isSubscribed };
+  }
+
+  async createDance(insertDance: InsertDance): Promise<Dance> {
+    const code = generateDanceCode();
+    const result = await this.db.insert(dances).values({ ...insertDance, code }).returning();
+    return result[0];
+  }
+
+  async getDancesByCreator(userId: string): Promise<Dance[]> {
+    return await this.db
+      .select()
+      .from(dances)
+      .where(eq(dances.creatorUserId, userId))
+      .orderBy(desc(dances.createdAt));
+  }
+
+  async getDanceByCode(code: string): Promise<Dance | undefined> {
+    const result = await this.db
+      .select()
+      .from(dances)
+      .where(eq(dances.code, code));
+    return result[0];
+  }
+
+  async getDanceById(id: string): Promise<Dance | undefined> {
+    const result = await this.db
+      .select()
+      .from(dances)
+      .where(eq(dances.id, id));
+    return result[0];
+  }
+
+  async createDanceRequest(insertReq: InsertDanceRequest): Promise<DanceRequest> {
+    const result = await this.db.insert(danceRequests).values(insertReq).returning();
+    return result[0];
+  }
+
+  async getDanceRequestsByDance(danceId: string): Promise<DanceRequest[]> {
+    return await this.db
+      .select()
+      .from(danceRequests)
+      .where(eq(danceRequests.danceId, danceId))
+      .orderBy(desc(danceRequests.createdAt));
+  }
+
+  async updateDanceRequestStatus(id: string, status: string): Promise<DanceRequest | undefined> {
+    const result = await this.db
+      .update(danceRequests)
+      .set({ status })
+      .where(eq(danceRequests.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async createNotification(insertNotif: InsertNotification): Promise<Notification> {
+    const result = await this.db.insert(notifications).values(insertNotif).returning();
+    return result[0];
+  }
+
+  async getNotificationsByUser(userId: string): Promise<Notification[]> {
+    return await this.db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async getUnreadNotificationCount(userId: string): Promise<number> {
+    const result = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(notifications)
+      .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+    return Number(result[0]?.count || 0);
+  }
+
+  async markNotificationRead(id: string): Promise<void> {
+    await this.db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, id));
+  }
+
+  async markAllNotificationsRead(userId: string): Promise<void> {
+    await this.db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.userId, userId));
   }
 }
 

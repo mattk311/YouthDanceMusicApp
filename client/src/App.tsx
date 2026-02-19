@@ -8,6 +8,8 @@ import LoginCard from "@/components/LoginCard";
 import HomePage from "@/pages/HomePage";
 import PrivacyPage from "@/pages/PrivacyPage";
 import PopularSongsPage from "@/pages/PopularSongsPage";
+import DanceManagementPage from "@/pages/DanceManagementPage";
+import DanceRequestPage from "@/pages/DanceRequestPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -27,6 +29,7 @@ function Router() {
   if (!user) {
     return (
       <Switch>
+        <Route path="/request" component={DanceRequestPage} />
         <Route path="/privacy" component={PrivacyPage} />
         <Route component={LoginCard} />
       </Switch>
@@ -37,6 +40,8 @@ function Router() {
     <Switch>
       <Route path="/" component={HomePage} />
       <Route path="/popular" component={PopularSongsPage} />
+      <Route path="/dances" component={DanceManagementPage} />
+      <Route path="/request" component={DanceRequestPage} />
       <Route path="/privacy" component={PrivacyPage} />
       <Route component={NotFound} />
     </Switch>

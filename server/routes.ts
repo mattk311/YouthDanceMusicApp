@@ -10,6 +10,7 @@ import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClie
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
+import { z } from "zod";
 
 const FREE_DAILY_LIMIT = 5;
 
@@ -461,6 +462,336 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error searching song:", error);
       res.status(500).json({ error: "Failed to search song" });
+    }
+  });
+
+  // Public endpoint to search songs for dance requests (no auth required, no usage limits)
+  app.get("/api/songs/search-public", async (req, res) => {
+    try {
+      const { title, artist } = req.query;
+
+      if (!title || typeof title !== "string") {
+        return res.status(400).json({ error: "Title is required" });
+      }
+
+      const artistName = artist && typeof artist === "string" ? artist : "";
+      const searchKey = `${title.toLowerCase().trim()}|${artistName.toLowerCase().trim()}`;
+
+      const cachedSong = await storage.getSongBySearchKey(searchKey);
+      if (cachedSong) {
+        const spotifyTrackId = cachedSong.spotifyUrl?.split('/track/')[1]?.split('?')[0] || null;
+        return res.json({
+          found: true,
+          song: {
+            title: cachedSong.songName,
+            artist: cachedSong.artistName,
+            album: cachedSong.albumName,
+            albumArt: cachedSong.albumArt,
+            explicit: cachedSong.isExplicit,
+            spotifyUrl: cachedSong.spotifyUrl,
+            spotifyTrackId,
+          },
+          evaluation: cachedSong.aiUnavailable ? null : {
+            recommendation: cachedSong.aiRecommendation,
+            danceType: cachedSong.aiDanceType || null,
+          },
+        });
+      }
+
+      const track = await searchSong(title, artistName || undefined);
+      if (!track) {
+        return res.json({ found: false });
+      }
+
+      let evaluation = null;
+      let aiUnavailable = false;
+      try {
+        evaluation = await evaluateSongForLDSChurchDance(
+          track.name,
+          track.artists.join(", "),
+          track.album
+        );
+      } catch (aiError) {
+        console.error("AI evaluation failed:", aiError);
+        aiUnavailable = true;
+      }
+
+      try {
+        await storage.createSong({
+          searchKey,
+          songName: track.name,
+          artistName: track.artists.join(", "),
+          albumName: track.album || null,
+          albumArt: track.albumArt || null,
+          spotifyUrl: track.spotifyUrl || null,
+          isExplicit: track.explicit || false,
+          aiRecommendation: evaluation?.recommendation || null,
+          aiReasoning: evaluation?.reasoning || null,
+          aiConcerns: evaluation?.concerns || null,
+          aiPositives: evaluation?.positives || null,
+          aiDanceType: evaluation?.danceType || null,
+          aiIsLineDance: evaluation?.isLineDance || false,
+          aiUnavailable,
+        });
+      } catch (dbError) {
+        console.error("Failed to save song to database:", dbError);
+      }
+
+      res.json({
+        found: true,
+        song: {
+          title: track.name,
+          artist: track.artists.join(", "),
+          album: track.album,
+          albumArt: track.albumArt,
+          explicit: track.explicit,
+          spotifyUrl: track.spotifyUrl,
+          spotifyTrackId: track.id,
+        },
+        evaluation: evaluation ? {
+          recommendation: evaluation.recommendation,
+          danceType: evaluation.danceType,
+        } : null,
+      });
+    } catch (error) {
+      console.error("Error in public song search:", error);
+      res.status(500).json({ error: "Failed to search song" });
+    }
+  });
+
+  // Public autocomplete for dance requests
+  app.get("/api/songs/autocomplete-public", async (req, res) => {
+    try {
+      const { query, type } = req.query;
+      if (!query || typeof query !== "string") {
+        return res.json({ suggestions: [] });
+      }
+      const validType = type === "artist" ? "artist" : "track";
+      const suggestions = await getAutocompleteSuggestions(query, validType);
+      res.json({ suggestions });
+    } catch (error) {
+      console.error("Error getting public autocomplete suggestions:", error);
+      res.status(500).json({ error: "Failed to fetch suggestions" });
+    }
+  });
+
+  // ===== DANCE MANAGEMENT ROUTES =====
+
+  function requireProUser(req: any, res: any, next: any) {
+    const user = req.user as User;
+    if (user.subscriptionStatus !== "active") {
+      return res.status(403).json({ error: "Pro subscription required" });
+    }
+    next();
+  }
+
+  // Create a dance (pro users only)
+  app.post("/api/dances", requireAuth, requireProUser, async (req, res) => {
+    try {
+      const schema = z.object({
+        name: z.string().min(1, "Name is required"),
+        date: z.string().min(1, "Date is required"),
+        startTime: z.string().min(1, "Start time is required"),
+        endTime: z.string().min(1, "End time is required"),
+        location: z.string().min(1, "Location is required"),
+      });
+
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0].message });
+      }
+
+      const user = req.user as User;
+      const dance = await storage.createDance({
+        ...parsed.data,
+        creatorUserId: user.id,
+        isActive: true,
+      });
+
+      res.json(dance);
+    } catch (error) {
+      console.error("Error creating dance:", error);
+      res.status(500).json({ error: "Failed to create dance" });
+    }
+  });
+
+  // List dances for current DJ
+  app.get("/api/dances", requireAuth, requireProUser, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const userDances = await storage.getDancesByCreator(user.id);
+      res.json(userDances);
+    } catch (error) {
+      console.error("Error listing dances:", error);
+      res.status(500).json({ error: "Failed to list dances" });
+    }
+  });
+
+  // Get dance by code (public - for attendees)
+  app.get("/api/dances/code/:code", async (req, res) => {
+    try {
+      const dance = await storage.getDanceByCode(req.params.code.toUpperCase());
+      if (!dance) {
+        return res.status(404).json({ error: "Dance not found" });
+      }
+      res.json({
+        id: dance.id,
+        code: dance.code,
+        name: dance.name,
+        date: dance.date,
+        startTime: dance.startTime,
+        endTime: dance.endTime,
+        location: dance.location,
+        isActive: dance.isActive,
+      });
+    } catch (error) {
+      console.error("Error getting dance:", error);
+      res.status(500).json({ error: "Failed to get dance" });
+    }
+  });
+
+  // Get requests for a specific dance (DJ only)
+  app.get("/api/dances/:danceId/requests", requireAuth, requireProUser, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const dance = await storage.getDanceById(req.params.danceId);
+      if (!dance || dance.creatorUserId !== user.id) {
+        return res.status(404).json({ error: "Dance not found" });
+      }
+      const requests = await storage.getDanceRequestsByDance(dance.id);
+      res.json(requests);
+    } catch (error) {
+      console.error("Error getting dance requests:", error);
+      res.status(500).json({ error: "Failed to get requests" });
+    }
+  });
+
+  // Submit a song request to a dance (public)
+  app.post("/api/dances/:code/requests", async (req, res) => {
+    try {
+      const schema = z.object({
+        requesterName: z.string().min(1, "Your name is required"),
+        songTitle: z.string().min(1, "Song title is required"),
+        artistName: z.string().min(1, "Artist name is required"),
+        albumArt: z.string().optional(),
+        spotifyUrl: z.string().optional(),
+      });
+
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0].message });
+      }
+
+      const dance = await storage.getDanceByCode(req.params.code.toUpperCase());
+      if (!dance) {
+        return res.status(404).json({ error: "Dance not found" });
+      }
+
+      if (!dance.isActive) {
+        return res.status(400).json({ error: "This dance is no longer accepting requests" });
+      }
+
+      const request = await storage.createDanceRequest({
+        danceId: dance.id,
+        requesterName: parsed.data.requesterName,
+        songTitle: parsed.data.songTitle,
+        artistName: parsed.data.artistName,
+        albumArt: parsed.data.albumArt || null,
+        spotifyUrl: parsed.data.spotifyUrl || null,
+        status: "pending",
+      });
+
+      await storage.createNotification({
+        userId: dance.creatorUserId,
+        type: "song_request",
+        title: "New Song Request",
+        message: `${parsed.data.requesterName} requested "${parsed.data.songTitle}" by ${parsed.data.artistName} for ${dance.name}`,
+        danceId: dance.id,
+        requestId: request.id,
+        isRead: false,
+      });
+
+      res.json({ success: true, request });
+    } catch (error) {
+      console.error("Error submitting request:", error);
+      res.status(500).json({ error: "Failed to submit request" });
+    }
+  });
+
+  // Accept or reject a dance request (DJ only)
+  app.patch("/api/requests/:requestId", requireAuth, requireProUser, async (req, res) => {
+    try {
+      const { status } = req.body;
+      if (!status || !["accepted", "rejected"].includes(status)) {
+        return res.status(400).json({ error: "Status must be 'accepted' or 'rejected'" });
+      }
+
+      const user = req.user as User;
+
+      const allDances = await storage.getDancesByCreator(user.id);
+      const requestId = req.params.requestId;
+
+      let foundRequest = null;
+      for (const dance of allDances) {
+        const danceRequests = await storage.getDanceRequestsByDance(dance.id);
+        foundRequest = danceRequests.find(r => r.id === requestId);
+        if (foundRequest) break;
+      }
+
+      if (!foundRequest) {
+        return res.status(404).json({ error: "Request not found or not authorized" });
+      }
+
+      const updatedRequest = await storage.updateDanceRequestStatus(requestId, status);
+      res.json(updatedRequest);
+    } catch (error) {
+      console.error("Error updating request:", error);
+      res.status(500).json({ error: "Failed to update request" });
+    }
+  });
+
+  // ===== NOTIFICATION ROUTES =====
+
+  app.get("/api/notifications", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const userNotifications = await storage.getNotificationsByUser(user.id);
+      res.json(userNotifications);
+    } catch (error) {
+      console.error("Error getting notifications:", error);
+      res.status(500).json({ error: "Failed to get notifications" });
+    }
+  });
+
+  app.get("/api/notifications/unread-count", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const count = await storage.getUnreadNotificationCount(user.id);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error getting unread count:", error);
+      res.status(500).json({ error: "Failed to get unread count" });
+    }
+  });
+
+  app.post("/api/notifications/:id/read", requireAuth, async (req, res) => {
+    try {
+      await storage.markNotificationRead(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking notification read:", error);
+      res.status(500).json({ error: "Failed to mark notification as read" });
+    }
+  });
+
+  app.post("/api/notifications/read-all", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      await storage.markAllNotificationsRead(user.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking all notifications read:", error);
+      res.status(500).json({ error: "Failed to mark all as read" });
     }
   });
 
