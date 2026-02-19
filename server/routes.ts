@@ -26,7 +26,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get(
     "/auth/google",
-    passport.authenticate("google", { scope: ["profile", "email"] })
+    (req, res, next) => {
+      const returnTo = req.query.returnTo as string | undefined;
+      if (returnTo && req.session) {
+        (req.session as any).returnTo = returnTo;
+      }
+      passport.authenticate("google", { scope: ["profile", "email"] })(req, res, next);
+    }
   );
 
   app.get(
@@ -46,7 +52,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.error("[Auth] Session login error:", loginErr);
             return res.redirect("/?error=auth_failed");
           }
-          return res.redirect("/");
+          const returnTo = (req.session as any)?.returnTo || "/";
+          delete (req.session as any).returnTo;
+          return res.redirect(returnTo);
         });
       })(req, res, next);
     }
@@ -681,11 +689,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Submit a song request to a dance (public)
-  app.post("/api/dances/:code/requests", async (req, res) => {
+  const MAX_REQUESTS_PER_DANCE = 3;
+
+  // Get user's request count for a dance (requires auth)
+  app.get("/api/dances/:code/my-requests", requireAuth, async (req, res) => {
     try {
+      const user = req.user as User;
+      const dance = await storage.getDanceByCode(req.params.code.toUpperCase());
+      if (!dance) {
+        return res.status(404).json({ error: "Dance not found" });
+      }
+      const count = await storage.getUserRequestCountForDance(user.id, dance.id);
+      res.json({ count, remaining: Math.max(0, MAX_REQUESTS_PER_DANCE - count), limit: MAX_REQUESTS_PER_DANCE });
+    } catch (error) {
+      console.error("Error getting request count:", error);
+      res.status(500).json({ error: "Failed to get request count" });
+    }
+  });
+
+  // Submit a song request to a dance (requires auth, max 3 per dance)
+  app.post("/api/dances/:code/requests", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+
       const schema = z.object({
-        requesterName: z.string().min(1, "Your name is required"),
         songTitle: z.string().min(1, "Song title is required"),
         artistName: z.string().min(1, "Artist name is required"),
         albumArt: z.string().optional(),
@@ -706,9 +733,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "This dance is no longer accepting requests" });
       }
 
+      const currentCount = await storage.getUserRequestCountForDance(user.id, dance.id);
+      if (currentCount >= MAX_REQUESTS_PER_DANCE) {
+        return res.status(400).json({ error: `You can only request up to ${MAX_REQUESTS_PER_DANCE} songs per dance` });
+      }
+
       const request = await storage.createDanceRequest({
         danceId: dance.id,
-        requesterName: parsed.data.requesterName,
+        requesterUserId: user.id,
+        requesterName: user.name,
         songTitle: parsed.data.songTitle,
         artistName: parsed.data.artistName,
         albumArt: parsed.data.albumArt || null,
@@ -720,13 +753,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: dance.creatorUserId,
         type: "song_request",
         title: "New Song Request",
-        message: `${parsed.data.requesterName} requested "${parsed.data.songTitle}" by ${parsed.data.artistName} for ${dance.name}`,
+        message: `${user.name} requested "${parsed.data.songTitle}" by ${parsed.data.artistName} for ${dance.name}`,
         danceId: dance.id,
         requestId: request.id,
         isRead: false,
       });
 
-      res.json({ success: true, request });
+      const remaining = MAX_REQUESTS_PER_DANCE - (currentCount + 1);
+      res.json({ success: true, request, remaining });
     } catch (error) {
       console.error("Error submitting request:", error);
       res.status(500).json({ error: "Failed to submit request" });

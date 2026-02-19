@@ -52,6 +52,7 @@ export interface IStorage {
 
   createDanceRequest(request: InsertDanceRequest): Promise<DanceRequest>;
   getDanceRequestsByDance(danceId: string): Promise<DanceRequest[]>;
+  getUserRequestCountForDance(userId: string, danceId: string): Promise<number>;
   updateDanceRequestStatus(id: string, status: string): Promise<DanceRequest | undefined>;
 
   createNotification(notification: InsertNotification): Promise<Notification>;
@@ -235,6 +236,11 @@ export class MemStorage implements IStorage {
     return Array.from(this.danceRequestMap.values())
       .filter((r) => r.danceId === danceId)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async getUserRequestCountForDance(userId: string, danceId: string): Promise<number> {
+    return Array.from(this.danceRequestMap.values())
+      .filter((r) => r.danceId === danceId && r.requesterUserId === userId).length;
   }
 
   async updateDanceRequestStatus(id: string, status: string): Promise<DanceRequest | undefined> {
@@ -437,6 +443,14 @@ export class DbStorage implements IStorage {
       .from(danceRequests)
       .where(eq(danceRequests.danceId, danceId))
       .orderBy(desc(danceRequests.createdAt));
+  }
+
+  async getUserRequestCountForDance(userId: string, danceId: string): Promise<number> {
+    const result = await this.db
+      .select()
+      .from(danceRequests)
+      .where(and(eq(danceRequests.danceId, danceId), eq(danceRequests.requesterUserId, userId)));
+    return result.length;
   }
 
   async updateDanceRequestStatus(id: string, status: string): Promise<DanceRequest | undefined> {
