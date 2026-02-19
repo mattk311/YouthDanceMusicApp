@@ -749,6 +749,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "pending",
       });
 
+      const searchKey = `${parsed.data.songTitle.toLowerCase().trim()}|${parsed.data.artistName.toLowerCase().trim()}`;
+      try {
+        await storage.incrementSongSearchCount(searchKey);
+      } catch (err) {
+        console.error("Failed to increment search count for dance request:", err);
+      }
+
       await storage.createNotification({
         userId: dance.creatorUserId,
         type: "song_request",
