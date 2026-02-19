@@ -31,9 +31,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/auth/google/callback",
-    passport.authenticate("google", { failureRedirect: "/" }),
-    (_req, res) => {
-      res.redirect("/");
+    (req, res, next) => {
+      passport.authenticate("google", (err: any, user: any, info: any) => {
+        if (err) {
+          console.error("[Auth] Google OAuth error:", err);
+          return res.redirect("/?error=auth_failed");
+        }
+        if (!user) {
+          console.error("[Auth] Google OAuth no user returned:", info);
+          return res.redirect("/?error=auth_failed");
+        }
+        req.logIn(user, (loginErr) => {
+          if (loginErr) {
+            console.error("[Auth] Session login error:", loginErr);
+            return res.redirect("/?error=auth_failed");
+          }
+          return res.redirect("/");
+        });
+      })(req, res, next);
     }
   );
 
