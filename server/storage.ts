@@ -46,6 +46,7 @@ export interface IStorage {
   ): Promise<{ count: number; remaining: number; isSubscribed: boolean }>;
 
   createDance(dance: InsertDance): Promise<Dance>;
+  deleteDance(id: string): Promise<void>;
   getDancesByCreator(userId: string): Promise<Dance[]>;
   getDanceByCode(code: string): Promise<Dance | undefined>;
   getDanceById(id: string): Promise<Dance | undefined>;
@@ -202,6 +203,13 @@ export class MemStorage implements IStorage {
     };
     this.danceMap.set(id, dance);
     return dance;
+  }
+
+  async deleteDance(id: string): Promise<void> {
+    this.danceMap.delete(id);
+    for (const [reqId, req] of this.danceRequestMap.entries()) {
+      if (req.danceId === id) this.danceRequestMap.delete(reqId);
+    }
   }
 
   async getDancesByCreator(userId: string): Promise<Dance[]> {
@@ -406,6 +414,11 @@ export class DbStorage implements IStorage {
     const code = generateDanceCode();
     const result = await this.db.insert(dances).values({ ...insertDance, code }).returning();
     return result[0];
+  }
+
+  async deleteDance(id: string): Promise<void> {
+    await this.db.delete(danceRequests).where(eq(danceRequests.danceId, id));
+    await this.db.delete(dances).where(eq(dances.id, id));
   }
 
   async getDancesByCreator(userId: string): Promise<Dance[]> {

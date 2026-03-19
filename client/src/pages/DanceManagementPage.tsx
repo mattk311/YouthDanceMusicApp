@@ -16,7 +16,17 @@ import ThemeToggle from "@/components/ThemeToggle";
 import UsageBadge from "@/components/UsageBadge";
 import NotificationBell from "@/components/NotificationBell";
 import type { User, Dance, DanceRequest } from "@shared/schema";
-import { ArrowLeft, Plus, QrCode, Copy, Check, X, Clock, MapPin, Calendar, Music } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ArrowLeft, Plus, QrCode, Copy, Check, X, Clock, MapPin, Calendar, Music, Trash2 } from "lucide-react";
 
 interface UsageData {
   count: number;
@@ -31,6 +41,7 @@ export default function DanceManagementPage() {
   const [showQR, setShowQR] = useState(false);
   const [qrDance, setQrDance] = useState<Dance | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [danceToDelete, setDanceToDelete] = useState<Dance | null>(null);
 
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
@@ -96,6 +107,24 @@ export default function DanceManagementPage() {
     },
     onError: (error: Error) => {
       toast({ title: "Failed to update request", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteDanceMutation = useMutation({
+    mutationFn: async (danceId: string) => {
+      const res = await apiRequest("DELETE", `/api/dances/${danceId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/dances"] });
+      setDanceToDelete(null);
+      if (selectedDance && selectedDance.id === danceToDelete?.id) {
+        setSelectedDance(null);
+      }
+      toast({ title: "Dance deleted", description: "The dance has been removed." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to delete dance", description: error.message, variant: "destructive" });
     },
   });
 
@@ -295,6 +324,16 @@ export default function DanceManagementPage() {
                         <QrCode className="h-3.5 w-3.5" />
                         QR Code
                       </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDanceToDelete(selectedDance)}
+                        className="gap-2"
+                        data-testid="button-delete-dance"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Delete
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
@@ -434,6 +473,14 @@ export default function DanceManagementPage() {
                         >
                           <QrCode className="h-4 w-4" />
                         </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={(e) => { e.stopPropagation(); setDanceToDelete(dance); }}
+                          data-testid={`button-delete-${dance.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
@@ -441,6 +488,27 @@ export default function DanceManagementPage() {
               ))}
             </div>
           )}
+
+          <AlertDialog open={!!danceToDelete} onOpenChange={(open) => { if (!open) setDanceToDelete(null); }}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Dance</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete <strong>{danceToDelete?.name}</strong>? This will permanently remove the dance and all of its song requests. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => danceToDelete && deleteDanceMutation.mutate(danceToDelete.id)}
+                  disabled={deleteDanceMutation.isPending}
+                  data-testid="button-confirm-delete"
+                >
+                  {deleteDanceMutation.isPending ? "Deleting..." : "Delete"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <Dialog open={showQR} onOpenChange={setShowQR}>
             <DialogContent className="sm:max-w-sm">

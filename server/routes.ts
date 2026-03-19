@@ -650,6 +650,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete a dance (DJ only, must be owner)
+  app.delete("/api/dances/:id", requireAuth, requireProUser, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const dance = await storage.getDanceById(req.params.id);
+      if (!dance) {
+        return res.status(404).json({ error: "Dance not found" });
+      }
+      if (dance.creatorUserId !== user.id) {
+        return res.status(403).json({ error: "Not authorized to delete this dance" });
+      }
+      await storage.deleteDance(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting dance:", error);
+      res.status(500).json({ error: "Failed to delete dance" });
+    }
+  });
+
   // Get dance by code (public - for attendees)
   app.get("/api/dances/code/:code", async (req, res) => {
     try {
