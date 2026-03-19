@@ -427,29 +427,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         aiUnavailable = true;
       }
 
-      // Save to database
-      try {
-        await storage.createSong({
-          searchKey,
-          songName: track.name,
-          artistName: track.artists.join(", "),
-          albumName: track.album || null,
-          albumArt: track.albumArt || null,
-          spotifyUrl: track.spotifyUrl || null,
-          isExplicit: track.explicit || false,
-          aiRecommendation: evaluation?.recommendation || null,
-          aiReasoning: evaluation?.reasoning || null,
-          aiConcerns: evaluation?.concerns || null,
-          aiPositives: evaluation?.positives || null,
-          aiDanceType: evaluation?.danceType || null,
-          aiIsLineDance: evaluation?.isLineDance || false,
-          aiUnavailable,
-        });
-        console.log(`Saved to cache: ${track.name} - ${track.artists.join(", ")}`);
-        // Increment search count for the newly created song
-        await storage.incrementSongSearchCount(searchKey);
-      } catch (dbError) {
-        console.error("Failed to save song to database:", dbError);
+      // Save to database only when lyrics were found (or when AI was unavailable due to a transient error)
+      const lyricsFound = evaluation ? evaluation.lyricsFound : false;
+      if (aiUnavailable || lyricsFound) {
+        try {
+          await storage.createSong({
+            searchKey,
+            songName: track.name,
+            artistName: track.artists.join(", "),
+            albumName: track.album || null,
+            albumArt: track.albumArt || null,
+            spotifyUrl: track.spotifyUrl || null,
+            isExplicit: track.explicit || false,
+            aiRecommendation: evaluation?.recommendation || null,
+            aiReasoning: evaluation?.reasoning || null,
+            aiConcerns: evaluation?.concerns || null,
+            aiPositives: evaluation?.positives || null,
+            aiDanceType: evaluation?.danceType || null,
+            aiIsLineDance: evaluation?.isLineDance || false,
+            aiUnavailable,
+          });
+          console.log(`Saved to cache: ${track.name} - ${track.artists.join(", ")}`);
+          // Increment search count for the newly created song
+          await storage.incrementSongSearchCount(searchKey);
+        } catch (dbError) {
+          console.error("Failed to save song to database:", dbError);
+        }
+      } else {
+        console.log(`Skipping cache for: ${track.name} - lyrics not found by AI`);
       }
 
       // Increment search count for non-subscribers
@@ -539,25 +544,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         aiUnavailable = true;
       }
 
-      try {
-        await storage.createSong({
-          searchKey,
-          songName: track.name,
-          artistName: track.artists.join(", "),
-          albumName: track.album || null,
-          albumArt: track.albumArt || null,
-          spotifyUrl: track.spotifyUrl || null,
-          isExplicit: track.explicit || false,
-          aiRecommendation: evaluation?.recommendation || null,
-          aiReasoning: evaluation?.reasoning || null,
-          aiConcerns: evaluation?.concerns || null,
-          aiPositives: evaluation?.positives || null,
-          aiDanceType: evaluation?.danceType || null,
-          aiIsLineDance: evaluation?.isLineDance || false,
-          aiUnavailable,
-        });
-      } catch (dbError) {
-        console.error("Failed to save song to database:", dbError);
+      const lyricsFoundPublic = evaluation ? evaluation.lyricsFound : false;
+      if (aiUnavailable || lyricsFoundPublic) {
+        try {
+          await storage.createSong({
+            searchKey,
+            songName: track.name,
+            artistName: track.artists.join(", "),
+            albumName: track.album || null,
+            albumArt: track.albumArt || null,
+            spotifyUrl: track.spotifyUrl || null,
+            isExplicit: track.explicit || false,
+            aiRecommendation: evaluation?.recommendation || null,
+            aiReasoning: evaluation?.reasoning || null,
+            aiConcerns: evaluation?.concerns || null,
+            aiPositives: evaluation?.positives || null,
+            aiDanceType: evaluation?.danceType || null,
+            aiIsLineDance: evaluation?.isLineDance || false,
+            aiUnavailable,
+          });
+        } catch (dbError) {
+          console.error("Failed to save song to database:", dbError);
+        }
+      } else {
+        console.log(`Skipping cache for (public): ${track.name} - lyrics not found by AI`);
       }
 
       res.json({

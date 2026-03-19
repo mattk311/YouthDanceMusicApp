@@ -7,6 +7,7 @@ const openai = new OpenAI({
 });
 
 export interface SongEvaluation {
+  lyricsFound: boolean;
   appropriate: boolean;
   reasoning: string;
   concerns: string[];
@@ -53,11 +54,12 @@ Consider these specific factors:
 
 Provide your evaluation in the following JSON format:
 {
-  "appropriate": boolean (true if the song is appropriate, false if not),
-  "reasoning": "A clear, balanced explanation of your decision (2-3 sentences)",
+  "lyricsFound": boolean (true if you have knowledge of this song's lyrics, false if you do not recognize this song or cannot find its lyrics),
+  "appropriate": boolean (true if the song is appropriate, false if not — use false if lyricsFound is false),
+  "reasoning": "A clear, balanced explanation of your decision (2-3 sentences) — if lyricsFound is false, explain that the lyrics could not be found",
   "concerns": ["list of specific concerns found, if any"],
   "positives": ["list of positive aspects, if any"],
-  "recommendation": "approved" | "not-recommended" | "review-needed",
+  "recommendation": "approved" | "not-recommended" | "review-needed" — use "review-needed" if lyricsFound is false,
   "danceType": "fast" | "slow",
   "isLineDance": boolean (true only if it's a fast song commonly used for line dancing)
 }
@@ -91,6 +93,7 @@ Provide only the JSON response, no additional text.`;
 
     // Validate the response has required fields
     if (
+      typeof evaluation.lyricsFound !== "boolean" ||
       typeof evaluation.appropriate !== "boolean" ||
       typeof evaluation.reasoning !== "string" ||
       !Array.isArray(evaluation.concerns) ||
