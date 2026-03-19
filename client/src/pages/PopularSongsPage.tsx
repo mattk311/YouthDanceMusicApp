@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,9 +13,13 @@ import {
   Music,
   Users,
   ExternalLink,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import type { Song } from "@shared/schema";
+
+const PAGE_SIZE = 20;
 
 function getRecommendationConfig(recommendation: string | null, isExplicit: boolean) {
   if (recommendation === "approved") {
@@ -57,11 +62,18 @@ function getRecommendationConfig(recommendation: string | null, isExplicit: bool
 }
 
 export default function PopularSongsPage() {
+  const [currentPage, setCurrentPage] = useState(1);
+
   const { data, isLoading, error } = useQuery<{ songs: Song[] }>({
     queryKey: ["/api/songs/popular"],
   });
 
   const isProError = error && (error as any)?.message?.includes("Pro subscription");
+
+  const allSongs = data?.songs ?? [];
+  const totalPages = Math.max(1, Math.ceil(allSongs.length / PAGE_SIZE));
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const pageSongs = allSongs.slice(pageStart, pageStart + PAGE_SIZE);
 
   return (
     <div className="min-h-screen bg-background">
@@ -115,7 +127,7 @@ export default function PopularSongsPage() {
             </Card>
           )}
 
-          {data?.songs && data.songs.length === 0 && (
+          {data?.songs && allSongs.length === 0 && (
             <Card>
               <CardContent className="py-12 text-center space-y-2">
                 <Music className="h-12 w-12 text-muted-foreground mx-auto" />
@@ -124,9 +136,10 @@ export default function PopularSongsPage() {
             </Card>
           )}
 
-          {data?.songs && data.songs.length > 0 && (
+          {allSongs.length > 0 && (
             <div className="space-y-3" data-testid="popular-songs-list">
-              {data.songs.map((song, index) => {
+              {pageSongs.map((song, index) => {
+                const globalIndex = pageStart + index;
                 const config = getRecommendationConfig(song.aiRecommendation, song.isExplicit || false);
                 const StatusIcon = config.icon;
 
@@ -134,8 +147,8 @@ export default function PopularSongsPage() {
                   <Card key={song.id} className="hover-elevate" data-testid={`card-song-${song.id}`}>
                     <CardContent className="py-4">
                       <div className="flex items-center gap-4">
-                        <div className="text-2xl font-bold text-muted-foreground w-10 text-center flex-shrink-0" data-testid={`text-rank-${index}`}>
-                          {index + 1}
+                        <div className="text-2xl font-bold text-muted-foreground w-10 text-center flex-shrink-0" data-testid={`text-rank-${globalIndex}`}>
+                          {globalIndex + 1}
                         </div>
 
                         {song.albumArt ? (
@@ -206,6 +219,36 @@ export default function PopularSongsPage() {
                   </Card>
                 );
               })}
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-2" data-testid="pagination-controls">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setCurrentPage((p) => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    disabled={currentPage === 1}
+                    className="gap-1"
+                    data-testid="button-prev-page"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground" data-testid="text-page-indicator">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setCurrentPage((p) => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    disabled={currentPage === totalPages}
+                    className="gap-1"
+                    data-testid="button-next-page"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
