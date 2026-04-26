@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import passport from "./auth";
 import { searchSong, getAutocompleteSuggestions } from "./spotify";
-import { getSpotifyAuthUrl, exchangeSpotifyCode, isSpotifyConnected, getUserPlaylists, addTrackToPlaylist, disconnectSpotify } from "./spotifyUserClient";
+import { getSpotifyAuthUrl, exchangeSpotifyCode, isSpotifyConnected, getUserPlaylists, getPlaylistTracks, addTrackToPlaylist, disconnectSpotify } from "./spotifyUserClient";
 import { evaluateSongForLDSChurchDance } from "./ai-evaluator";
 import type { User } from "@shared/schema";
 import { storage } from "./storage";
@@ -309,15 +309,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get tracks for a specific playlist
+  app.get("/api/spotify/playlists/:playlistId/tracks", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const { playlistId } = req.params;
+
+      const freshUser = await storage.getUser(user.id);
+      if (!freshUser || !isSpotifyConnected(freshUser)) {
+        return res.status(400).json({ error: "Spotify not connected" });
+      }
+
+      const tracks = await getPlaylistTracks(freshUser, playlistId);
+      res.json({ tracks });
+    } catch (error: any) {
+      console.error("Error fetching playlist tracks:", error);
+      if (error.message?.includes("expired") || error.message?.includes("reconnect")) {
+        return res.status(401).json({ error: error.message });
+      }
+      res.status(500).json({ error: "Failed to fetch playlist tracks" });
+    }
+  });
+
   // Add track to a playlist
   app.post("/api/spotify/playlists/:playlistId/add", requireAuth, async (req, res) => {
     try {
       const user = req.user as User;
       const { playlistId } = req.params;
-      const { trackId } = req.body;
+      const { trackId, position } = req.body;
 
       if (!trackId || typeof trackId !== "string") {
         return res.status(400).json({ error: "Track ID is required" });
+      }
+
+      let parsedPosition: number | undefined;
+      if (position !== undefined && position !== null) {
+        const n = Number(position);
+        if (!Number.isInteger(n) || n < 0) {
+          return res.status(400).json({ error: "Position must be a non-negative integer" });
+        }
+        parsedPosition = n;
       }
 
       const freshUser = await storage.getUser(user.id);
@@ -325,7 +356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Spotify not connected" });
       }
 
-      await addTrackToPlaylist(freshUser, playlistId, trackId);
+      await addTrackToPlaylist(freshUser, playlistId, trackId, parsedPosition);
       res.json({ success: true, message: "Song added to playlist!" });
     } catch (error: any) {
       console.error("Error adding to playlist:", error);

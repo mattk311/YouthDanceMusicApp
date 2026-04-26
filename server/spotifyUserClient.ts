@@ -166,9 +166,52 @@ export async function getUserPlaylists(user: User): Promise<any[]> {
   return playlists;
 }
 
-export async function addTrackToPlaylist(user: User, playlistId: string, trackId: string): Promise<void> {
+export async function getPlaylistTracks(user: User, playlistId: string): Promise<any[]> {
+  const accessToken = await getValidAccessToken(user);
+
+  const tracks: any[] = [];
+  let url: string | null = `${SPOTIFY_API_BASE}/playlists/${playlistId}/tracks?fields=items(track(id,name,artists(name),album(images))),next&limit=100`;
+
+  while (url) {
+    const res: Response = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("[Spotify] Failed to fetch playlist tracks:", errText);
+      throw new Error("Failed to fetch playlist tracks");
+    }
+
+    const body: any = await res.json();
+    for (const item of body.items || []) {
+      if (!item?.track) continue;
+      tracks.push({
+        id: item.track.id,
+        name: item.track.name,
+        artists: (item.track.artists || []).map((a: any) => a.name).join(", "),
+        imageUrl: item.track.album?.images?.[0]?.url || null,
+      });
+    }
+    url = body.next;
+  }
+
+  return tracks;
+}
+
+export async function addTrackToPlaylist(
+  user: User,
+  playlistId: string,
+  trackId: string,
+  position?: number,
+): Promise<void> {
   const accessToken = await getValidAccessToken(user);
   const spotifyUri = `spotify:track:${trackId}`;
+
+  const body: { uris: string[]; position?: number } = { uris: [spotifyUri] };
+  if (typeof position === "number" && position >= 0) {
+    body.position = position;
+  }
 
   const response = await fetch(`${SPOTIFY_API_BASE}/playlists/${playlistId}/tracks`, {
     method: "POST",
@@ -176,7 +219,7 @@ export async function addTrackToPlaylist(user: User, playlistId: string, trackId
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ uris: [spotifyUri] }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
