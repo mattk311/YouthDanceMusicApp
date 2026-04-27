@@ -4,7 +4,7 @@ import passport from "./auth";
 import { searchSong, getAutocompleteSuggestions } from "./spotify";
 import { getSpotifyAuthUrl, exchangeSpotifyCode, isSpotifyConnected, getUserPlaylists, getPlaylistTracks, addTrackToPlaylist, disconnectSpotify } from "./spotifyUserClient";
 import { evaluateSongForLDSChurchDance } from "./ai-evaluator";
-import type { User } from "@shared/schema";
+import type { User, Song } from "@shared/schema";
 import { storage } from "./storage";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { sql } from "drizzle-orm";
@@ -13,6 +13,37 @@ import { neon } from "@neondatabase/serverless";
 import { z } from "zod";
 
 const FREE_DAILY_LIMIT = 5;
+
+// Backfill missing AI fields (especially aiDanceability) on a cached song.
+// Returns the song unchanged if backfill is unnecessary or AI fails.
+async function backfillSongAiFields(cachedSong: Song): Promise<Song> {
+  if (cachedSong.aiUnavailable || cachedSong.aiDanceability != null) {
+    return cachedSong;
+  }
+  try {
+    const evaluation = await evaluateSongForLDSChurchDance(
+      cachedSong.songName,
+      cachedSong.artistName,
+      cachedSong.albumName || undefined,
+    );
+    const updated = await storage.updateSongBySearchKey(cachedSong.searchKey, {
+      aiRecommendation: evaluation.recommendation,
+      aiReasoning: evaluation.reasoning,
+      aiConcerns: evaluation.concerns,
+      aiPositives: evaluation.positives,
+      aiDanceType: evaluation.danceType,
+      aiIsLineDance: evaluation.isLineDance,
+      aiDanceability: evaluation.danceability,
+    });
+    if (updated) {
+      console.log(`[Backfill] Updated AI fields for: ${cachedSong.songName} - ${cachedSong.artistName} (danceability=${evaluation.danceability})`);
+      return updated;
+    }
+  } catch (err) {
+    console.error(`[Backfill] Failed for "${cachedSong.songName}":`, err);
+  }
+  return cachedSong;
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication middleware
@@ -392,24 +423,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const searchKey = `${title.toLowerCase().trim()}|${artistName.toLowerCase().trim()}`;
 
       // Check database cache first
-      const cachedSong = await storage.getSongBySearchKey(searchKey);
-      
-      if (cachedSong) {
+      const cachedSongInitial = await storage.getSongBySearchKey(searchKey);
+
+      if (cachedSongInitial) {
         console.log(`Cache hit for: ${title} - ${artistName}`);
-        
+
+        // Lazy backfill: re-evaluate songs cached before the danceability score existed
+        const cachedSong = await backfillSongAiFields(cachedSongInitial);
+
         // Increment song search count
         await storage.incrementSongSearchCount(searchKey);
-        
+
         // Increment search count for non-subscribers
         if (!usage.isSubscribed) {
           await storage.incrementDailySearchCount(user.id);
         }
-        
+
         const updatedUsage = await storage.getUserSearchUsage(user.id);
-        
+
         // Extract track ID from Spotify URL (format: https://open.spotify.com/track/TRACK_ID)
         const spotifyTrackId = cachedSong.spotifyUrl?.split('/track/')[1]?.split('?')[0] || null;
-        
+
         return res.json({
           found: true,
           cached: true,
@@ -430,6 +464,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             recommendation: cachedSong.aiRecommendation,
             danceType: cachedSong.aiDanceType || null,
             isLineDance: cachedSong.aiIsLineDance || false,
+            danceability: cachedSong.aiDanceability ?? null,
           },
           usage: updatedUsage,
         });
@@ -476,6 +511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             aiPositives: evaluation?.positives || null,
             aiDanceType: evaluation?.danceType || null,
             aiIsLineDance: evaluation?.isLineDance || false,
+            aiDanceability: evaluation?.danceability ?? null,
             aiUnavailable,
           });
           console.log(`Saved to cache: ${track.name} - ${track.artists.join(", ")}`);
@@ -515,6 +551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           recommendation: evaluation.recommendation,
           danceType: evaluation.danceType,
           isLineDance: evaluation.isLineDance,
+          danceability: evaluation.danceability,
         } : null,
         usage: updatedUsage,
       });
@@ -536,8 +573,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const artistName = artist && typeof artist === "string" ? artist : "";
       const searchKey = `${title.toLowerCase().trim()}|${artistName.toLowerCase().trim()}`;
 
-      const cachedSong = await storage.getSongBySearchKey(searchKey);
-      if (cachedSong) {
+      const cachedSongInitial = await storage.getSongBySearchKey(searchKey);
+      if (cachedSongInitial) {
+        const cachedSong = await backfillSongAiFields(cachedSongInitial);
         const spotifyTrackId = cachedSong.spotifyUrl?.split('/track/')[1]?.split('?')[0] || null;
         return res.json({
           found: true,
@@ -553,6 +591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           evaluation: cachedSong.aiUnavailable ? null : {
             recommendation: cachedSong.aiRecommendation,
             danceType: cachedSong.aiDanceType || null,
+            danceability: cachedSong.aiDanceability ?? null,
           },
         });
       }
@@ -592,6 +631,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             aiPositives: evaluation?.positives || null,
             aiDanceType: evaluation?.danceType || null,
             aiIsLineDance: evaluation?.isLineDance || false,
+            aiDanceability: evaluation?.danceability ?? null,
             aiUnavailable,
           });
         } catch (dbError) {
@@ -615,6 +655,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         evaluation: evaluation ? {
           recommendation: evaluation.recommendation,
           danceType: evaluation.danceType,
+          danceability: evaluation.danceability,
         } : null,
       });
     } catch (error) {

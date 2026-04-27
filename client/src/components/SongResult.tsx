@@ -9,6 +9,7 @@ import {
   Music,
   Users,
   ListPlus,
+  Flame,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -25,6 +26,7 @@ export interface SongEvaluation {
   recommendation: "approved" | "not-recommended" | "review-needed";
   danceType?: "fast" | "slow";
   isLineDance?: boolean;
+  danceability?: number | null;
 }
 
 export interface SongData {
@@ -252,24 +254,37 @@ export default function SongResult({ status, song, isSubscribed, spotifyConnecte
             <Separator />
             {evaluation ? (
               <div className="space-y-4">
-                {evaluation.danceType && (
+                {(evaluation.danceType || typeof evaluation.danceability === "number") && (
                   <div className="flex flex-wrap gap-2" data-testid="dance-type-badges">
-                    <Badge 
-                      variant="outline" 
-                      className="gap-1"
-                      data-testid={`badge-dance-${evaluation.danceType}`}
-                    >
-                      <Music className="h-3 w-3" />
-                      {evaluation.danceType === "fast" ? "Fast Dance" : "Slow Dance"}
-                    </Badge>
+                    {evaluation.danceType && (
+                      <Badge
+                        variant="outline"
+                        className="gap-1"
+                        data-testid={`badge-dance-${evaluation.danceType}`}
+                      >
+                        <Music className="h-3 w-3" />
+                        {evaluation.danceType === "fast" ? "Fast Dance" : "Slow Dance"}
+                      </Badge>
+                    )}
                     {evaluation.danceType === "fast" && evaluation.isLineDance && (
-                      <Badge 
-                        variant="outline" 
+                      <Badge
+                        variant="outline"
                         className="gap-1 bg-primary/10 text-primary border-primary/20"
                         data-testid="badge-line-dance"
                       >
                         <Users className="h-3 w-3" />
                         Line Dance
+                      </Badge>
+                    )}
+                    {typeof evaluation.danceability === "number" && (
+                      <Badge
+                        variant="outline"
+                        className="gap-1"
+                        title="How well this song works on a youth dance floor (1-10)"
+                        data-testid="badge-danceability"
+                      >
+                        <Flame className="h-3 w-3" />
+                        Danceability {evaluation.danceability}/10
                       </Badge>
                     )}
                   </div>

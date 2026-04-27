@@ -16,6 +16,7 @@ export interface SongEvaluation {
   recommendation: "approved" | "not-recommended" | "review-needed";
   danceType: "fast" | "slow";
   isLineDance: boolean;
+  danceability: number;
 }
 
 async function runAiEvaluation(
@@ -58,6 +59,14 @@ Consider these specific factors:
    - Is this a fast dance song or a slow dance song?
    - If it's a fast dance song, is it commonly used as a line dance song (like the Cupid Shuffle, Cha Cha Slide, Cotton Eye Joe, etc.)?
 
+5. **Danceability Score (1-10)**: Rate how well this song will work on a youth dance floor. This is NOT just tempo — it weighs how popular and recognizable the song is and how reliably it gets people on the dance floor at a real dance.
+   - 10 = an iconic, instantly recognizable dance-floor anthem that almost always packs the floor (e.g., the kind of widely loved hit that the vast majority of youth would know and react to).
+   - 7-9 = popular, well-known songs that consistently get a strong dance-floor response.
+   - 4-6 = moderately known songs that some people will dance to but won't pack the floor.
+   - 1-3 = obscure, unrecognizable, or low-energy songs that few people would dance to.
+   - Slow songs can still score high if they are widely recognized "slow dance" staples.
+   - Be honest about obscurity: if the song is not broadly recognized by mainstream youth audiences, the score must be lower regardless of tempo.
+
 ${lyrics ? `The lyrics above were retrieved from Genius. Treat "lyricsFound" as true since lyrics have been provided.` : ""}
 
 Provide your evaluation in the following JSON format:
@@ -69,7 +78,8 @@ Provide your evaluation in the following JSON format:
   "positives": ["list of positive aspects, if any"],
   "recommendation": "approved" | "not-recommended" | "review-needed" — use "review-needed" if lyricsFound is false,
   "danceType": "fast" | "slow",
-  "isLineDance": boolean (true only if it's a fast song commonly used for line dancing)
+  "isLineDance": boolean (true only if it's a fast song commonly used for line dancing),
+  "danceability": integer from 1 to 10 reflecting popularity and dance-floor appeal as described above
 }
 
 Be balanced and fair in your assessment. Consider that:
@@ -105,10 +115,14 @@ Provide only the JSON response, no additional text.`;
     !Array.isArray(evaluation.positives) ||
     !["approved", "not-recommended", "review-needed"].includes(evaluation.recommendation) ||
     !["fast", "slow"].includes(evaluation.danceType) ||
-    typeof evaluation.isLineDance !== "boolean"
+    typeof evaluation.isLineDance !== "boolean" ||
+    !Number.isFinite(evaluation.danceability)
   ) {
     throw new Error("Invalid evaluation format from AI");
   }
+
+  // Clamp danceability to a valid 1-10 integer
+  evaluation.danceability = Math.max(1, Math.min(10, Math.round(evaluation.danceability)));
 
   return evaluation;
 }

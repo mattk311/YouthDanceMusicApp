@@ -15,6 +15,7 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
+  Flame,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import type { Song } from "@shared/schema";
@@ -70,7 +71,14 @@ export default function PopularSongsPage() {
 
   const isProError = error && (error as any)?.message?.includes("Pro subscription");
 
-  const allSongs = data?.songs ?? [];
+  const allSongs = [...(data?.songs ?? [])].sort((a, b) => {
+    const aScore = a.aiDanceability ?? -1;
+    const bScore = b.aiDanceability ?? -1;
+    if (bScore !== aScore) return bScore - aScore;
+    const countDiff = (b.searchCount || 0) - (a.searchCount || 0);
+    if (countDiff !== 0) return countDiff;
+    return a.id.localeCompare(b.id);
+  });
   const totalPages = Math.max(1, Math.ceil(allSongs.length / PAGE_SIZE));
   const pageStart = (currentPage - 1) * PAGE_SIZE;
   const pageSongs = allSongs.slice(pageStart, pageStart + PAGE_SIZE);
@@ -184,6 +192,17 @@ export default function PopularSongsPage() {
                             <Badge variant="outline" className="gap-1 bg-primary/10 text-primary border-primary/20 hidden sm:flex">
                               <Users className="h-3 w-3" />
                               Line Dance
+                            </Badge>
+                          )}
+                          {typeof song.aiDanceability === "number" && (
+                            <Badge
+                              variant="outline"
+                              className="gap-1"
+                              title="How well this song works on a youth dance floor (1-10)"
+                              data-testid={`badge-danceability-${song.id}`}
+                            >
+                              <Flame className="h-3 w-3" />
+                              {song.aiDanceability}/10
                             </Badge>
                           )}
 

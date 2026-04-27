@@ -36,6 +36,7 @@ export interface IStorage {
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   getSongBySearchKey(searchKey: string): Promise<Song | undefined>;
   createSong(song: InsertSong): Promise<Song>;
+  updateSongBySearchKey(searchKey: string, updates: Partial<Song>): Promise<Song | undefined>;
   incrementSongSearchCount(searchKey: string): Promise<void>;
   getAllSongsOrderedBySearchCount(): Promise<Song[]>;
   incrementDailySearchCount(
@@ -138,11 +139,20 @@ export class MemStorage implements IStorage {
       aiPositives: insertSong.aiPositives || null,
       aiDanceType: insertSong.aiDanceType || null,
       aiIsLineDance: insertSong.aiIsLineDance || false,
+      aiDanceability: insertSong.aiDanceability ?? null,
       aiUnavailable: insertSong.aiUnavailable || false,
       searchCount: 0,
     };
     this.songs.set(insertSong.searchKey, song);
     return song;
+  }
+
+  async updateSongBySearchKey(searchKey: string, updates: Partial<Song>): Promise<Song | undefined> {
+    const song = this.songs.get(searchKey);
+    if (!song) return undefined;
+    const updated = { ...song, ...updates };
+    this.songs.set(searchKey, updated);
+    return updated;
   }
 
   async incrementSongSearchCount(searchKey: string): Promise<void> {
@@ -355,6 +365,17 @@ export class DbStorage implements IStorage {
 
   async createSong(insertSong: InsertSong): Promise<Song> {
     const result = await this.db.insert(songs).values(insertSong).returning();
+    return result[0];
+  }
+
+  async updateSongBySearchKey(searchKey: string, updates: Partial<Song>): Promise<Song | undefined> {
+    const { id, searchKey: _sk, createdAt, ...safeUpdates } = updates as any;
+    if (Object.keys(safeUpdates).length === 0) return await this.getSongBySearchKey(searchKey);
+    const result = await this.db
+      .update(songs)
+      .set(safeUpdates)
+      .where(eq(songs.searchKey, searchKey))
+      .returning();
     return result[0];
   }
 
