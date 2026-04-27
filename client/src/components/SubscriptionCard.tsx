@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Card,
@@ -18,6 +17,15 @@ interface SubscriptionCardProps {
   isSubscribed: boolean;
   onClose?: () => void;
 }
+
+const PRO_BENEFITS = [
+  "Unlimited song searches",
+  "AI-powered appropriateness evaluations",
+  "Detailed reasoning and concerns",
+  "Popular Songs leaderboard access",
+  "Live dance request management",
+  "Cancel anytime",
+];
 
 export default function SubscriptionCard({
   isSubscribed,
@@ -44,9 +52,7 @@ export default function SubscriptionCard({
       return response.json();
     },
     onSuccess: (data) => {
-      if (data.url) {
-        window.location.href = data.url;
-      }
+      if (data.url) window.location.href = data.url;
     },
     onError: (error: Error) => {
       toast({
@@ -63,14 +69,13 @@ export default function SubscriptionCard({
       return response.json();
     },
     onSuccess: (data) => {
-      if (data.url) {
-        window.location.href = data.url;
-      }
+      if (data.url) window.location.href = data.url;
     },
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to open subscription management",
+        description:
+          error.message || "Failed to open subscription management",
         variant: "destructive",
       });
     },
@@ -83,30 +88,29 @@ export default function SubscriptionCard({
   if (isSubscribed) {
     return (
       <Card className="w-full max-w-md mx-auto">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-2">
+        <CardHeader className="text-center space-y-3">
+          <div className="mx-auto">
             <Badge variant="default" className="gap-1">
               <Sparkles className="h-3 w-3" />
               Pro Subscriber
             </Badge>
           </div>
           <CardTitle>You're a Pro!</CardTitle>
-          <CardDescription>You have unlimited song searches</CardDescription>
+          <CardDescription>
+            Thanks for supporting Youth Dance Music.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent>
           <ul className="space-y-2">
-            <li className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Check className="h-4 w-4 text-primary" />
-              Unlimited song searches
-            </li>
-            <li className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Check className="h-4 w-4 text-primary" />
-              AI-powered evaluations
-            </li>
-            <li className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Check className="h-4 w-4 text-primary" />
-              Priority support
-            </li>
+            {PRO_BENEFITS.slice(0, 4).map((benefit) => (
+              <li
+                key={benefit}
+                className="flex items-center gap-2 text-sm text-muted-foreground"
+              >
+                <Check className="h-4 w-4 text-success flex-shrink-0" />
+                {benefit}
+              </li>
+            ))}
           </ul>
         </CardContent>
         <CardFooter className="flex flex-col gap-2">
@@ -133,38 +137,30 @@ export default function SubscriptionCard({
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto border-primary/20">
-      <CardHeader className="text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-2">
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader className="text-center space-y-3">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
           <Sparkles className="h-6 w-6 text-primary" />
         </div>
-        <CardTitle>Upgrade to Pro</CardTitle>
+        <CardTitle className="text-xl sm:text-2xl">Upgrade to Pro</CardTitle>
         <CardDescription>
-          Get unlimited song searches for your youth events
+          Everything you need to run safe youth dances.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
         <div className="text-center">
-          <span className="text-4xl font-bold">${price}</span>
-          <span className="text-muted-foreground">/month</span>
+          <div className="inline-flex items-baseline gap-1">
+            <span className="text-4xl font-bold tracking-tight">${price}</span>
+            <span className="text-muted-foreground">/month</span>
+          </div>
         </div>
         <ul className="space-y-2">
-          <li className="flex items-center gap-2 text-sm">
-            <Check className="h-4 w-4 text-primary" />
-            Unlimited song searches
-          </li>
-          <li className="flex items-center gap-2 text-sm">
-            <Check className="h-4 w-4 text-primary" />
-            AI-powered appropriateness evaluations
-          </li>
-          <li className="flex items-center gap-2 text-sm">
-            <Check className="h-4 w-4 text-primary" />
-            Detailed reasoning and concerns
-          </li>
-          <li className="flex items-center gap-2 text-sm">
-            <Check className="h-4 w-4 text-primary" />
-            Cancel anytime
-          </li>
+          {PRO_BENEFITS.map((benefit) => (
+            <li key={benefit} className="flex items-center gap-2 text-sm">
+              <Check className="h-4 w-4 text-success flex-shrink-0" />
+              {benefit}
+            </li>
+          ))}
         </ul>
       </CardContent>
       <CardFooter className="flex flex-col gap-2">

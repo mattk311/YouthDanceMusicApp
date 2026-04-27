@@ -6,10 +6,32 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import ThemeToggle from "@/components/ThemeToggle";
-import { Music, Search, Send, ArrowLeft, Check, MapPin, Calendar, Clock, LogIn } from "lucide-react";
+import AppShell from "@/components/AppShell";
+import EmptyState from "@/components/EmptyState";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Search,
+  Send,
+  ArrowLeft,
+  Check,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  MapPin,
+  Calendar,
+  Clock,
+  LogIn,
+  Music,
+  Lock,
+} from "lucide-react";
 
 interface DanceInfo {
   id: string;
@@ -61,7 +83,12 @@ export default function DanceRequestPage() {
 
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  const { data: user, isLoading: userLoading } = useQuery<{ id: string; name: string; email: string; avatar?: string } | null>({
+  const { data: user, isLoading: userLoading } = useQuery<{
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  } | null>({
     queryKey: ["/api/auth/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
@@ -76,6 +103,7 @@ export default function DanceRequestPage() {
       setCode(codeParam.toUpperCase());
       lookupDance(codeParam.toUpperCase());
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -103,14 +131,22 @@ export default function DanceRequestPage() {
       const res = await fetch(`/api/dances/code/${danceCode.toUpperCase()}`);
       if (!res.ok) {
         const err = await res.json();
-        toast({ title: "Dance not found", description: err.error || "Check the code and try again.", variant: "destructive" });
+        toast({
+          title: "Dance not found",
+          description: err.error || "Check the code and try again.",
+          variant: "destructive",
+        });
         setDance(null);
         return;
       }
       const data = await res.json();
       setDance(data);
     } catch {
-      toast({ title: "Error", description: "Could not look up dance. Please try again.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Could not look up dance. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLookupLoading(false);
     }
@@ -129,16 +165,21 @@ export default function DanceRequestPage() {
     try {
       const params = new URLSearchParams({ title: songTitle, artist });
       const res = await fetch(`/api/songs/search-public?${params}`);
-      if (!res.ok) {
-        throw new Error("Search failed");
-      }
+      if (!res.ok) throw new Error("Search failed");
       const data: SearchResult = await res.json();
       setSearchResult(data);
       setTimeout(() => {
-        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        resultsRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
       }, 100);
     } catch {
-      toast({ title: "Search failed", description: "Could not search for the song. Please try again.", variant: "destructive" });
+      toast({
+        title: "Search failed",
+        description: "Could not search for the song. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setSearchLoading(false);
     }
@@ -148,12 +189,21 @@ export default function DanceRequestPage() {
     if (!dance || !searchResult?.song || !isLoggedIn) return;
 
     if (searchResult.song.explicit) {
-      toast({ title: "Cannot request this song", description: "This song is marked as explicit and cannot be requested.", variant: "destructive" });
+      toast({
+        title: "Cannot request this song",
+        description:
+          "This song is marked as explicit and cannot be requested.",
+        variant: "destructive",
+      });
       return;
     }
 
     if (searchResult.evaluation?.recommendation === "not-recommended") {
-      toast({ title: "Cannot request this song", description: "This song has not been approved for church dances.", variant: "destructive" });
+      toast({
+        title: "Cannot request this song",
+        description: "This song has not been approved for church dances.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -177,10 +227,21 @@ export default function DanceRequestPage() {
 
       const data = await res.json();
       setSubmitted(true);
-      setRequestUsage(prev => prev ? { ...prev, count: prev.count + 1, remaining: data.remaining } : null);
-      toast({ title: "Request sent!", description: "Your song request has been sent to the DJ." });
+      setRequestUsage((prev) =>
+        prev
+          ? { ...prev, count: prev.count + 1, remaining: data.remaining }
+          : null,
+      );
+      toast({
+        title: "Request sent!",
+        description: "Your song request has been sent to the DJ.",
+      });
     } catch (error: any) {
-      toast({ title: "Request failed", description: error.message, variant: "destructive" });
+      toast({
+        title: "Request failed",
+        description: error.message,
+        variant: "destructive",
+      });
     } finally {
       setSubmitLoading(false);
     }
@@ -198,41 +259,107 @@ export default function DanceRequestPage() {
     window.location.href = `/auth/google?returnTo=${encodeURIComponent(currentUrl)}`;
   };
 
-  const isCleanSong = searchResult?.found && searchResult.song && !searchResult.song.explicit && searchResult.evaluation?.recommendation !== "not-recommended";
+  const isCleanSong =
+    searchResult?.found &&
+    searchResult.song &&
+    !searchResult.song.explicit &&
+    searchResult.evaluation?.recommendation !== "not-recommended";
   const hasReachedLimit = requestUsage && requestUsage.remaining <= 0;
+
+  // Step indicator helper
+  type Step = 1 | 2 | 3;
+  const currentStep: Step = !dance ? 1 : !submitted ? 2 : 3;
+
+  const StepDot = ({
+    n,
+    label,
+    active,
+    done,
+  }: {
+    n: number;
+    label: string;
+    active: boolean;
+    done: boolean;
+  }) => (
+    <div className="flex items-center gap-2">
+      <div
+        className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
+          done
+            ? "bg-success text-success-foreground"
+            : active
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground"
+        }`}
+        data-testid={`step-dot-${n}`}
+      >
+        {done ? <Check className="h-4 w-4" /> : n}
+      </div>
+      <span
+        className={`text-xs sm:text-sm ${
+          active || done ? "text-foreground font-medium" : "text-muted-foreground"
+        }`}
+      >
+        {label}
+      </span>
+    </div>
+  );
 
   if (userLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
+      <AppShell>
+        <main className="container mx-auto px-3 sm:px-4 py-8">
+          <div className="max-w-xl mx-auto space-y-4">
+            <Skeleton className="h-32 w-full rounded-md" />
+            <Skeleton className="h-48 w-full rounded-md" />
+          </div>
+        </main>
+      </AppShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex items-center justify-between gap-3 p-4 border-b bg-card flex-wrap">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Music className="h-4 w-4" />
+    <AppShell user={user || undefined} onSignIn={handleLogin}>
+      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
+        <div className="max-w-xl mx-auto space-y-5 sm:space-y-6">
+          {/* Step indicator */}
+          <div
+            className="flex items-center justify-between gap-2 px-1"
+            data-testid="step-indicator"
+          >
+            <StepDot
+              n={1}
+              label="Find dance"
+              active={currentStep === 1}
+              done={currentStep > 1}
+            />
+            <div className="h-px flex-1 bg-border" />
+            <StepDot
+              n={2}
+              label="Pick song"
+              active={currentStep === 2}
+              done={currentStep > 2}
+            />
+            <div className="h-px flex-1 bg-border" />
+            <StepDot
+              n={3}
+              label="Sent"
+              active={currentStep === 3}
+              done={false}
+            />
           </div>
-          <span className="font-semibold" data-testid="text-app-name">Youth Dance Music</span>
-        </div>
-        <div className="flex items-center gap-2">
-          {isLoggedIn && (
-            <span className="text-sm text-muted-foreground" data-testid="text-user-name">{user.name}</span>
-          )}
-          <ThemeToggle />
-        </div>
-      </div>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-xl mx-auto space-y-6">
           {!dance ? (
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl" data-testid="text-enter-code-title">Request a Song</CardTitle>
-                <CardDescription>Enter the dance code or scan the QR code to request a song</CardDescription>
+                <CardTitle
+                  className="text-xl sm:text-2xl"
+                  data-testid="text-enter-code-title"
+                >
+                  Request a Song
+                </CardTitle>
+                <CardDescription>
+                  Enter the dance code or scan the QR code to request a song.
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleCodeSubmit} className="space-y-4">
@@ -240,13 +367,14 @@ export default function DanceRequestPage() {
                     <Label htmlFor="dance-code">Dance Code</Label>
                     <Input
                       id="dance-code"
-                      placeholder="Enter 6-character code"
+                      placeholder="ABC123"
                       value={code}
                       onChange={(e) => setCode(e.target.value.toUpperCase())}
                       maxLength={6}
-                      className="font-mono text-center text-lg tracking-widest"
+                      className="font-mono text-center text-xl tracking-[0.4em] uppercase"
                       required
                       data-testid="input-dance-code"
+                      autoComplete="off"
                     />
                   </div>
                   <Button
@@ -261,22 +389,27 @@ export default function DanceRequestPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-5">
               <Card>
                 <CardHeader>
-                  <div className="flex items-start justify-between gap-4 flex-wrap">
-                    <div>
-                      <CardTitle data-testid="text-dance-name">{dance.name}</CardTitle>
-                      <CardDescription className="space-y-1 mt-2">
-                        <span className="flex items-center gap-1">
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="min-w-0">
+                      <CardTitle
+                        className="text-lg sm:text-xl"
+                        data-testid="text-dance-name"
+                      >
+                        {dance.name}
+                      </CardTitle>
+                      <CardDescription className="space-y-1 mt-2 text-xs sm:text-sm">
+                        <span className="flex items-center gap-1.5">
                           <Calendar className="h-3.5 w-3.5" />
                           {dance.date}
                         </span>
-                        <span className="flex items-center gap-1">
+                        <span className="flex items-center gap-1.5">
                           <Clock className="h-3.5 w-3.5" />
                           {dance.startTime} - {dance.endTime}
                         </span>
-                        <span className="flex items-center gap-1">
+                        <span className="flex items-center gap-1.5">
                           <MapPin className="h-3.5 w-3.5" />
                           {dance.location}
                         </span>
@@ -285,10 +418,16 @@ export default function DanceRequestPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => { setDance(null); setCode(""); resetForNewRequest(); setRequestUsage(null); }}
+                      onClick={() => {
+                        setDance(null);
+                        setCode("");
+                        resetForNewRequest();
+                        setRequestUsage(null);
+                      }}
                       data-testid="button-change-dance"
+                      className="gap-1"
                     >
-                      <ArrowLeft className="h-4 w-4 mr-1" />
+                      <ArrowLeft className="h-4 w-4" />
                       Change
                     </Button>
                   </div>
@@ -296,84 +435,123 @@ export default function DanceRequestPage() {
               </Card>
 
               {!isLoggedIn ? (
-                <Card>
-                  <CardContent className="py-8 text-center space-y-4">
-                    <div className="flex justify-center">
-                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <LogIn className="h-6 w-6 text-primary" />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-lg font-semibold" data-testid="text-login-required">Sign in to Request Songs</p>
-                      <p className="text-muted-foreground mt-1">You need to sign in with Google to request songs for this dance.</p>
-                    </div>
-                    <Button onClick={handleLogin} className="gap-2" data-testid="button-login-to-request">
-                      <LogIn className="h-4 w-4" />
-                      Sign in with Google
-                    </Button>
-                  </CardContent>
-                </Card>
+                <div data-testid="text-login-required">
+                  <EmptyState
+                    icon={LogIn}
+                    title="Sign in to Request Songs"
+                    description="You need to sign in with Google to request songs for this dance."
+                    variant="default"
+                    testId="empty-login-required"
+                    action={
+                      <Button
+                        onClick={handleLogin}
+                        className="gap-2"
+                        data-testid="button-login-to-request"
+                      >
+                        <LogIn className="h-4 w-4" />
+                        Sign in with Google
+                      </Button>
+                    }
+                  />
+                </div>
               ) : !dance.isActive ? (
-                <Card>
-                  <CardContent className="py-8 text-center">
-                    <p className="text-muted-foreground">This dance is no longer accepting requests.</p>
-                  </CardContent>
-                </Card>
+                <EmptyState
+                  icon={Lock}
+                  title="Dance closed"
+                  description="This dance is no longer accepting requests."
+                  variant="muted"
+                  testId="empty-dance-closed"
+                />
               ) : hasReachedLimit && !submitted ? (
-                <Card>
-                  <CardContent className="py-8 text-center space-y-2">
-                    <p className="text-lg font-semibold" data-testid="text-limit-reached">Request Limit Reached</p>
-                    <p className="text-muted-foreground">
-                      You have used all {requestUsage.limit} of your song requests for this dance.
-                    </p>
-                  </CardContent>
-                </Card>
+                <div data-testid="text-limit-reached">
+                  <EmptyState
+                    icon={Lock}
+                    title="Request Limit Reached"
+                    description={`You have used all ${requestUsage.limit} of your song requests for this dance.`}
+                    variant="warning"
+                    testId="empty-limit-reached"
+                  />
+                </div>
               ) : submitted ? (
-                <Card>
+                <Card data-testid="card-success">
                   <CardContent className="py-8 text-center space-y-4">
                     <div className="flex justify-center">
-                      <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                        <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
+                      <div
+                        className="h-16 w-16 rounded-full bg-success/15 text-success flex items-center justify-center animate-in zoom-in-50 duration-500"
+                        data-testid="icon-request-success"
+                      >
+                        <Check className="h-8 w-8" strokeWidth={3} />
                       </div>
                     </div>
-                    <div>
-                      <p className="text-lg font-semibold" data-testid="text-request-success">Request Sent!</p>
-                      <p className="text-muted-foreground mt-1">The DJ will see your song request.</p>
+                    <div className="space-y-1">
+                      <p
+                        className="text-lg font-semibold"
+                        data-testid="text-request-success"
+                      >
+                        Request Sent!
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        The DJ will see your song request.
+                      </p>
                       {requestUsage && requestUsage.remaining > 0 && (
-                        <p className="text-sm text-muted-foreground mt-2" data-testid="text-remaining-requests">
-                          You have {requestUsage.remaining} request{requestUsage.remaining !== 1 ? "s" : ""} remaining for this dance.
+                        <p
+                          className="text-sm text-muted-foreground"
+                          data-testid="text-remaining-requests"
+                        >
+                          You have {requestUsage.remaining} request
+                          {requestUsage.remaining !== 1 ? "s" : ""} remaining
+                          for this dance.
                         </p>
                       )}
                       {requestUsage && requestUsage.remaining <= 0 && (
-                        <p className="text-sm text-muted-foreground mt-2" data-testid="text-no-remaining">
+                        <p
+                          className="text-sm text-muted-foreground"
+                          data-testid="text-no-remaining"
+                        >
                           You have used all your requests for this dance.
                         </p>
                       )}
                     </div>
                     {requestUsage && requestUsage.remaining > 0 && (
-                      <Button onClick={resetForNewRequest} variant="outline" data-testid="button-request-another">
+                      <Button
+                        onClick={resetForNewRequest}
+                        variant="outline"
+                        data-testid="button-request-another"
+                      >
                         Request Another Song
                       </Button>
                     )}
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-5">
                   {requestUsage && (
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground" data-testid="text-request-count">
-                        {requestUsage.remaining} of {requestUsage.limit} requests remaining
-                      </p>
+                      <Badge
+                        variant="outline"
+                        className="gap-1"
+                        data-testid="text-request-count"
+                      >
+                        {requestUsage.remaining} of {requestUsage.limit} requests
+                        remaining
+                      </Badge>
                     </div>
                   )}
 
                   <Card>
                     <CardHeader>
-                      <CardTitle>Search for a Song</CardTitle>
-                      <CardDescription>Find the song you want to request</CardDescription>
+                      <CardTitle className="text-base sm:text-lg">
+                        Search for a Song
+                      </CardTitle>
+                      <CardDescription>
+                        Find the song you want to request.
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <form onSubmit={handleSongSearch} className="space-y-4">
+                      <form
+                        onSubmit={handleSongSearch}
+                        className="space-y-4"
+                      >
                         <div className="space-y-2">
                           <Label htmlFor="req-song-title">Song Title</Label>
                           <Input
@@ -399,7 +577,11 @@ export default function DanceRequestPage() {
                         <Button
                           type="submit"
                           className="w-full gap-2"
-                          disabled={searchLoading || !songTitle.trim() || !artist.trim()}
+                          disabled={
+                            searchLoading ||
+                            !songTitle.trim() ||
+                            !artist.trim()
+                          }
                           data-testid="button-search-song"
                         >
                           <Search className="h-4 w-4" />
@@ -412,65 +594,143 @@ export default function DanceRequestPage() {
                   {searchResult && (
                     <div ref={resultsRef}>
                       {!searchResult.found ? (
-                        <Card>
-                          <CardContent className="py-6 text-center">
-                            <p className="text-muted-foreground" data-testid="text-not-found">Song not found. Try a different search.</p>
-                          </CardContent>
-                        </Card>
-                      ) : searchResult.song && (
-                        <Card>
-                          <CardContent className="py-4">
-                            <div className="flex items-center gap-4">
-                              {searchResult.song.albumArt && (
-                                <img src={searchResult.song.albumArt} alt="" className="h-16 w-16 rounded-md object-cover flex-shrink-0" />
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <p className="font-semibold truncate" data-testid="text-result-song">{searchResult.song.title}</p>
-                                <p className="text-sm text-muted-foreground truncate" data-testid="text-result-artist">{searchResult.song.artist}</p>
-                                {searchResult.song.album && (
-                                  <p className="text-xs text-muted-foreground truncate">{searchResult.song.album}</p>
+                        <div data-testid="text-not-found">
+                          <EmptyState
+                            icon={Music}
+                            title="Song not found"
+                            description="Try a different search term or check your spelling."
+                            testId="empty-not-found"
+                          />
+                        </div>
+                      ) : (
+                        searchResult.song && (
+                          <Card
+                            className="overflow-hidden"
+                            data-testid="card-search-result"
+                          >
+                            {/* Status banner */}
+                            {(() => {
+                              const explicit = searchResult.song?.explicit;
+                              const rec =
+                                searchResult.evaluation?.recommendation;
+                              const banner = explicit
+                                ? {
+                                    bg: "bg-destructive/10 border-destructive/30",
+                                    iconWrap:
+                                      "bg-destructive/20 text-destructive",
+                                    Icon: XCircle,
+                                    title: "Explicit — cannot request",
+                                  }
+                                : rec === "not-recommended"
+                                  ? {
+                                      bg: "bg-destructive/10 border-destructive/30",
+                                      iconWrap:
+                                        "bg-destructive/20 text-destructive",
+                                      Icon: XCircle,
+                                      title: "Not approved for church dances",
+                                    }
+                                  : rec === "review-needed"
+                                    ? {
+                                        bg: "bg-warning/10 border-warning/30",
+                                        iconWrap:
+                                          "bg-warning/20 text-warning",
+                                        Icon: AlertTriangle,
+                                        title: "Needs review",
+                                      }
+                                    : {
+                                        bg: "bg-success/10 border-success/30",
+                                        iconWrap:
+                                          "bg-success/20 text-success",
+                                        Icon: CheckCircle2,
+                                        title: "Looks good — request away",
+                                      };
+                              const Icon = banner.Icon;
+                              return (
+                                <div
+                                  className={`px-4 py-3 border-b flex items-center gap-3 ${banner.bg}`}
+                                  data-testid="banner-result-status"
+                                >
+                                  <div
+                                    className={`flex h-9 w-9 items-center justify-center rounded-full flex-shrink-0 ${banner.iconWrap}`}
+                                  >
+                                    <Icon className="h-5 w-5" />
+                                  </div>
+                                  <p className="text-sm font-semibold">
+                                    {banner.title}
+                                  </p>
+                                </div>
+                              );
+                            })()}
+
+                            <CardContent className="p-4">
+                              <div className="flex items-center gap-3 sm:gap-4">
+                                {searchResult.song.albumArt ? (
+                                  <img
+                                    src={searchResult.song.albumArt}
+                                    alt=""
+                                    className="h-14 w-14 sm:h-16 sm:w-16 rounded-md object-cover flex-shrink-0"
+                                  />
+                                ) : (
+                                  <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+                                    <Music className="h-6 w-6 text-muted-foreground" />
+                                  </div>
                                 )}
-                                <div className="flex gap-2 mt-2 flex-wrap">
-                                  {searchResult.song.explicit && (
-                                    <Badge variant="destructive">Explicit</Badge>
+                                <div className="flex-1 min-w-0">
+                                  <p
+                                    className="font-semibold truncate"
+                                    data-testid="text-result-song"
+                                  >
+                                    {searchResult.song.title}
+                                  </p>
+                                  <p
+                                    className="text-sm text-muted-foreground truncate"
+                                    data-testid="text-result-artist"
+                                  >
+                                    {searchResult.song.artist}
+                                  </p>
+                                  {searchResult.song.album && (
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      {searchResult.song.album}
+                                    </p>
                                   )}
-                                  {searchResult.evaluation?.recommendation === "approved" && (
-                                    <Badge className="bg-green-600 text-white no-default-hover-elevate">Approved</Badge>
-                                  )}
-                                  {searchResult.evaluation?.recommendation === "not-recommended" && (
-                                    <Badge variant="destructive">Not Recommended</Badge>
-                                  )}
-                                  {searchResult.evaluation?.recommendation === "review-needed" && (
-                                    <Badge className="bg-yellow-500 text-white no-default-hover-elevate">Review Needed</Badge>
-                                  )}
-                                  {searchResult.evaluation?.danceType && (
-                                    <Badge variant="outline">{searchResult.evaluation.danceType}</Badge>
-                                  )}
+                                  <div className="flex gap-1.5 mt-2 flex-wrap">
+                                    {searchResult.evaluation?.danceType && (
+                                      <Badge variant="outline">
+                                        {searchResult.evaluation.danceType ===
+                                        "fast"
+                                          ? "Fast"
+                                          : "Slow"}
+                                      </Badge>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
 
-                            {isCleanSong ? (
-                              <Button
-                                className="w-full mt-4 gap-2"
-                                onClick={handleSubmitRequest}
-                                disabled={submitLoading}
-                                data-testid="button-submit-request"
-                              >
-                                <Send className="h-4 w-4" />
-                                {submitLoading ? "Sending..." : "Request This Song"}
-                              </Button>
-                            ) : (
-                              <div className="mt-4 p-3 rounded-md bg-destructive/10 text-sm text-center">
-                                <p data-testid="text-song-not-allowed">
+                              {isCleanSong ? (
+                                <Button
+                                  className="w-full mt-4 gap-2"
+                                  onClick={handleSubmitRequest}
+                                  disabled={submitLoading}
+                                  data-testid="button-submit-request"
+                                >
+                                  <Send className="h-4 w-4" />
+                                  {submitLoading
+                                    ? "Sending..."
+                                    : "Request This Song"}
+                                </Button>
+                              ) : (
+                                <p
+                                  className="mt-4 text-xs text-center text-muted-foreground"
+                                  data-testid="text-song-not-allowed"
+                                >
                                   {searchResult.song.explicit
                                     ? "This song is explicit and cannot be requested."
                                     : "This song has not been approved for church dances."}
                                 </p>
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
+                              )}
+                            </CardContent>
+                          </Card>
+                        )
                       )}
                     </div>
                   )}
@@ -480,6 +740,6 @@ export default function DanceRequestPage() {
           )}
         </div>
       </main>
-    </div>
+    </AppShell>
   );
 }

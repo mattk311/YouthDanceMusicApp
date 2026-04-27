@@ -1,20 +1,31 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
-import Header from "@/components/Header";
-import ThemeToggle from "@/components/ThemeToggle";
-import UsageBadge from "@/components/UsageBadge";
-import NotificationBell from "@/components/NotificationBell";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import AppShell from "@/components/AppShell";
+import EmptyState from "@/components/EmptyState";
+import {
+  DanceCardSkeletonGrid,
+  RequestRowSkeletonList,
+} from "@/components/skeletons";
 import type { User, Dance, DanceRequest } from "@shared/schema";
 import {
   AlertDialog,
@@ -26,7 +37,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Plus, QrCode, Copy, Check, X, Clock, MapPin, Calendar, Music, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  QrCode,
+  Copy,
+  Check,
+  X,
+  Clock,
+  MapPin,
+  Calendar,
+  Music,
+  Trash2,
+  Lock,
+} from "lucide-react";
 
 interface UsageData {
   count: number;
@@ -58,16 +82,22 @@ export default function DanceManagementPage() {
     enabled: !!user,
   });
 
+  const isPro = usage?.isSubscribed === true;
+
   const { data: dancesList, isLoading: dancesLoading } = useQuery<Dance[]>({
     queryKey: ["/api/dances"],
-    enabled: !!user && usage?.isSubscribed === true,
+    enabled: !!user && isPro,
   });
 
-  const { data: requests, isLoading: requestsLoading } = useQuery<DanceRequest[]>({
+  const { data: requests, isLoading: requestsLoading } = useQuery<
+    DanceRequest[]
+  >({
     queryKey: ["/api/dances", selectedDance?.id, "requests"],
     queryFn: async () => {
       if (!selectedDance) return [];
-      const res = await fetch(`/api/dances/${selectedDance.id}/requests`, { credentials: "include" });
+      const res = await fetch(`/api/dances/${selectedDance.id}/requests`, {
+        credentials: "include",
+      });
       if (!res.ok) throw new Error("Failed to fetch requests");
       return res.json();
     },
@@ -76,7 +106,13 @@ export default function DanceManagementPage() {
   });
 
   const createDanceMutation = useMutation({
-    mutationFn: async (data: { name: string; date: string; startTime: string; endTime: string; location: string }) => {
+    mutationFn: async (data: {
+      name: string;
+      date: string;
+      startTime: string;
+      endTime: string;
+      location: string;
+    }) => {
       const res = await apiRequest("POST", "/api/dances", data);
       return res.json();
     },
@@ -88,25 +124,46 @@ export default function DanceManagementPage() {
       setStartTime("");
       setEndTime("");
       setLocation("");
-      toast({ title: "Dance created", description: "Your dance has been created successfully." });
+      toast({
+        title: "Dance created",
+        description: "Your dance has been created successfully.",
+      });
     },
     onError: (error: Error) => {
-      toast({ title: "Failed to create dance", description: error.message, variant: "destructive" });
+      toast({
+        title: "Failed to create dance",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
   const updateRequestMutation = useMutation({
-    mutationFn: async ({ requestId, status }: { requestId: string; status: string }) => {
-      const res = await apiRequest("PATCH", `/api/requests/${requestId}`, { status });
+    mutationFn: async ({
+      requestId,
+      status,
+    }: {
+      requestId: string;
+      status: string;
+    }) => {
+      const res = await apiRequest("PATCH", `/api/requests/${requestId}`, {
+        status,
+      });
       return res.json();
     },
     onSuccess: () => {
       if (selectedDance) {
-        queryClient.invalidateQueries({ queryKey: ["/api/dances", selectedDance.id, "requests"] });
+        queryClient.invalidateQueries({
+          queryKey: ["/api/dances", selectedDance.id, "requests"],
+        });
       }
     },
     onError: (error: Error) => {
-      toast({ title: "Failed to update request", description: error.message, variant: "destructive" });
+      toast({
+        title: "Failed to update request",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -121,10 +178,17 @@ export default function DanceManagementPage() {
       if (selectedDance && selectedDance.id === danceToDelete?.id) {
         setSelectedDance(null);
       }
-      toast({ title: "Dance deleted", description: "The dance has been removed." });
+      toast({
+        title: "Dance deleted",
+        description: "The dance has been removed.",
+      });
     },
     onError: (error: Error) => {
-      toast({ title: "Failed to delete dance", description: error.message, variant: "destructive" });
+      toast({
+        title: "Failed to delete dance",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -136,7 +200,10 @@ export default function DanceManagementPage() {
   const copyCode = (code: string) => {
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
-    toast({ title: "Code copied", description: `Dance code ${code} copied to clipboard.` });
+    toast({
+      title: "Code copied",
+      description: `Dance code ${code} copied to clipboard.`,
+    });
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
@@ -147,54 +214,67 @@ export default function DanceManagementPage() {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/auth/logout", { method: "POST" });
-      if (!response.ok) throw new Error("Logout failed");
-      return response.json();
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      if (!res.ok) throw new Error("Logout failed");
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     },
   });
 
-  const pendingRequests = requests?.filter(r => r.status === "pending") || [];
-  const decidedRequests = requests?.filter(r => r.status !== "pending") || [];
+  const pendingRequests = requests?.filter((r) => r.status === "pending") || [];
+  const decidedRequests = requests?.filter((r) => r.status !== "pending") || [];
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex items-center justify-end gap-3 p-4 border-b bg-card flex-wrap">
-        <Link href="/">
-          <Button variant="ghost" size="sm" className="gap-2" data-testid="link-home">
-            <ArrowLeft className="h-4 w-4" />
-            Home
-          </Button>
-        </Link>
-        {usage?.isSubscribed && <NotificationBell />}
-        {usage && (
-          <UsageBadge
-            remaining={usage.remaining}
-            isSubscribed={usage.isSubscribed}
-          />
-        )}
-        <ThemeToggle />
-      </div>
-
-      <Header
-        user={user ? { name: user.name, email: user.email, avatar: user.avatar || undefined } : undefined}
-        onLogout={() => logoutMutation.mutate()}
-      />
-
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <h2 className="text-2xl font-semibold" data-testid="text-page-title">Dance Management</h2>
-              <p className="text-muted-foreground">Create and manage your dances</p>
+    <AppShell
+      user={
+        user
+          ? {
+              name: user.name,
+              email: user.email,
+              avatar: user.avatar || undefined,
+            }
+          : undefined
+      }
+      usage={usage}
+      onLogout={() => logoutMutation.mutate()}
+    >
+      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
+        <div className="max-w-4xl mx-auto space-y-5 sm:space-y-6">
+          <div className="flex items-end justify-between gap-3 flex-wrap">
+            <div className="space-y-1">
+              <h1
+                className="text-2xl sm:text-3xl font-bold tracking-tight"
+                data-testid="text-page-title"
+              >
+                Dance Management
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Create dances and review live song requests.
+              </p>
             </div>
-            <Button onClick={() => setShowCreateForm(true)} className="gap-2" data-testid="button-create-dance">
-              <Plus className="h-4 w-4" />
-              Create Dance
-            </Button>
+            {isPro && (
+              <Button
+                onClick={() => setShowCreateForm(true)}
+                className="gap-2"
+                data-testid="button-create-dance"
+              >
+                <Plus className="h-4 w-4" />
+                Create Dance
+              </Button>
+            )}
           </div>
+
+          {!isPro && (
+            <EmptyState
+              icon={Lock}
+              title="Pro Feature"
+              description="Create dances, share QR codes, and review song requests with a Pro subscription."
+              variant="default"
+              testId="empty-pro-required"
+            />
+          )}
 
           <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
             <DialogContent className="sm:max-w-md">
@@ -224,7 +304,7 @@ export default function DanceManagementPage() {
                     data-testid="input-dance-date"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="start-time">Start Time</Label>
                     <Input
@@ -259,36 +339,63 @@ export default function DanceManagementPage() {
                     data-testid="input-dance-location"
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={createDanceMutation.isPending} data-testid="button-submit-dance">
-                  {createDanceMutation.isPending ? "Creating..." : "Create Dance"}
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={createDanceMutation.isPending}
+                  data-testid="button-submit-dance"
+                >
+                  {createDanceMutation.isPending
+                    ? "Creating..."
+                    : "Create Dance"}
                 </Button>
               </form>
             </DialogContent>
           </Dialog>
 
-          {dancesLoading ? (
-            <div className="text-center py-8 text-muted-foreground">Loading dances...</div>
-          ) : !dancesList?.length ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Music className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-lg font-medium">No dances yet</p>
-                <p className="text-muted-foreground mt-1">Create your first dance to get started</p>
-              </CardContent>
-            </Card>
-          ) : selectedDance ? (
-            <div className="space-y-6">
-              <Button variant="ghost" onClick={() => setSelectedDance(null)} className="gap-2" data-testid="button-back-to-dances">
+          {isPro && dancesLoading ? (
+            <DanceCardSkeletonGrid count={4} />
+          ) : isPro && !dancesList?.length ? (
+            <EmptyState
+              icon={Music}
+              title="No dances yet"
+              description="Create your first dance to start collecting song requests."
+              testId="empty-dances"
+              action={
+                <Button
+                  onClick={() => setShowCreateForm(true)}
+                  className="gap-2"
+                  data-testid="button-create-first-dance"
+                >
+                  <Plus className="h-4 w-4" />
+                  Create Dance
+                </Button>
+              }
+            />
+          ) : isPro && selectedDance ? (
+            <div className="space-y-5">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedDance(null)}
+                className="gap-2 -ml-2"
+                data-testid="button-back-to-dances"
+              >
                 <ArrowLeft className="h-4 w-4" />
                 Back to all dances
               </Button>
 
               <Card>
                 <CardHeader>
-                  <div className="flex items-start justify-between gap-4 flex-wrap">
-                    <div>
-                      <CardTitle data-testid="text-dance-name">{selectedDance.name}</CardTitle>
-                      <CardDescription className="flex items-center gap-4 mt-2 flex-wrap">
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="min-w-0">
+                      <CardTitle
+                        className="text-lg sm:text-xl"
+                        data-testid="text-dance-name"
+                      >
+                        {selectedDance.name}
+                      </CardTitle>
+                      <CardDescription className="flex items-center gap-3 mt-2 flex-wrap text-xs sm:text-sm">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3.5 w-3.5" />
                           {selectedDance.date}
@@ -303,81 +410,119 @@ export default function DanceManagementPage() {
                         </span>
                       </CardDescription>
                     </div>
-                    <div className="flex gap-2 flex-wrap">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => copyCode(selectedDance.code)}
-                        className="gap-2"
-                        data-testid="button-copy-code"
-                      >
-                        {copiedCode === selectedDance.code ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                        {selectedDance.code}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => { setQrDance(selectedDance); setShowQR(true); }}
-                        className="gap-2"
-                        data-testid="button-show-qr"
-                      >
-                        <QrCode className="h-3.5 w-3.5" />
-                        QR Code
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setDanceToDelete(selectedDance)}
-                        className="gap-2"
-                        data-testid="button-delete-dance"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Delete
-                      </Button>
-                    </div>
+                  </div>
+                  <div className="flex gap-2 flex-wrap pt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyCode(selectedDance.code)}
+                      className="gap-2 font-mono"
+                      data-testid="button-copy-code"
+                    >
+                      {copiedCode === selectedDance.code ? (
+                        <Check className="h-3.5 w-3.5" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                      {selectedDance.code}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setQrDance(selectedDance);
+                        setShowQR(true);
+                      }}
+                      className="gap-2"
+                      data-testid="button-show-qr"
+                    >
+                      <QrCode className="h-3.5 w-3.5" />
+                      QR Code
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDanceToDelete(selectedDance)}
+                      className="gap-2"
+                      data-testid="button-delete-dance"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Delete
+                    </Button>
                   </div>
                 </CardHeader>
               </Card>
 
               {requestsLoading ? (
-                <div className="text-center py-4 text-muted-foreground">Loading requests...</div>
+                <RequestRowSkeletonList count={3} />
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-5">
                   {pendingRequests.length > 0 && (
                     <div className="space-y-3">
-                      <h3 className="text-lg font-semibold">Pending Requests ({pendingRequests.length})</h3>
+                      <h2 className="text-base sm:text-lg font-semibold">
+                        Pending Requests ({pendingRequests.length})
+                      </h2>
                       {pendingRequests.map((req) => (
                         <Card key={req.id}>
-                          <CardContent className="py-4">
-                            <div className="flex items-center justify-between gap-4 flex-wrap">
-                              <div className="flex items-center gap-3">
-                                {req.albumArt && (
-                                  <img src={req.albumArt} alt="" className="h-12 w-12 rounded-md object-cover" />
+                          <CardContent className="p-3 sm:p-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                {req.albumArt ? (
+                                  <img
+                                    src={req.albumArt}
+                                    alt=""
+                                    className="h-12 w-12 rounded-md object-cover flex-shrink-0"
+                                  />
+                                ) : (
+                                  <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+                                    <Music className="h-5 w-5 text-muted-foreground" />
+                                  </div>
                                 )}
-                                <div>
-                                  <p className="font-medium" data-testid={`text-request-song-${req.id}`}>{req.songTitle}</p>
-                                  <p className="text-sm text-muted-foreground">{req.artistName}</p>
-                                  <p className="text-xs text-muted-foreground mt-1">Requested by {req.requesterName}</p>
+                                <div className="min-w-0">
+                                  <p
+                                    className="font-medium truncate"
+                                    data-testid={`text-request-song-${req.id}`}
+                                  >
+                                    {req.songTitle}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground truncate">
+                                    {req.artistName}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-1 truncate">
+                                    Requested by {req.requesterName}
+                                  </p>
                                 </div>
                               </div>
-                              <div className="flex gap-2">
+                              <div className="flex gap-2 sm:flex-shrink-0">
                                 <Button
                                   size="sm"
-                                  onClick={() => updateRequestMutation.mutate({ requestId: req.id, status: "accepted" })}
+                                  className="flex-1 sm:flex-initial gap-1"
+                                  onClick={() =>
+                                    updateRequestMutation.mutate({
+                                      requestId: req.id,
+                                      status: "accepted",
+                                    })
+                                  }
                                   disabled={updateRequestMutation.isPending}
                                   data-testid={`button-accept-${req.id}`}
                                 >
-                                  <Check className="h-4 w-4 mr-1" />
+                                  <Check className="h-4 w-4" />
                                   Play
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => updateRequestMutation.mutate({ requestId: req.id, status: "rejected" })}
+                                  className="flex-1 sm:flex-initial gap-1"
+                                  onClick={() =>
+                                    updateRequestMutation.mutate({
+                                      requestId: req.id,
+                                      status: "rejected",
+                                    })
+                                  }
                                   disabled={updateRequestMutation.isPending}
                                   data-testid={`button-reject-${req.id}`}
                                 >
-                                  <X className="h-4 w-4 mr-1" />
+                                  <X className="h-4 w-4" />
                                   Skip
                                 </Button>
                               </div>
@@ -390,23 +535,48 @@ export default function DanceManagementPage() {
 
                   {decidedRequests.length > 0 && (
                     <div className="space-y-3">
-                      <h3 className="text-lg font-semibold">Decided ({decidedRequests.length})</h3>
+                      <h2 className="text-base sm:text-lg font-semibold">
+                        Decided ({decidedRequests.length})
+                      </h2>
                       {decidedRequests.map((req) => (
                         <Card key={req.id} className="opacity-75">
-                          <CardContent className="py-4">
-                            <div className="flex items-center justify-between gap-4 flex-wrap">
-                              <div className="flex items-center gap-3">
+                          <CardContent className="p-3 sm:p-4">
+                            <div className="flex items-center justify-between gap-3 flex-wrap">
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
                                 {req.albumArt && (
-                                  <img src={req.albumArt} alt="" className="h-10 w-10 rounded-md object-cover" />
+                                  <img
+                                    src={req.albumArt}
+                                    alt=""
+                                    className="h-10 w-10 rounded-md object-cover flex-shrink-0"
+                                  />
                                 )}
-                                <div>
-                                  <p className="font-medium">{req.songTitle}</p>
-                                  <p className="text-sm text-muted-foreground">{req.artistName}</p>
-                                  <p className="text-xs text-muted-foreground">by {req.requesterName}</p>
+                                <div className="min-w-0">
+                                  <p className="font-medium truncate">
+                                    {req.songTitle}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground truncate">
+                                    {req.artistName}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    by {req.requesterName}
+                                  </p>
                                 </div>
                               </div>
-                              <Badge variant={req.status === "accepted" ? "default" : "secondary"}>
-                                {req.status === "accepted" ? "Playing" : "Skipped"}
+                              <Badge
+                                variant={
+                                  req.status === "accepted"
+                                    ? "default"
+                                    : "secondary"
+                                }
+                                className={
+                                  req.status === "accepted"
+                                    ? "bg-success text-success-foreground"
+                                    : ""
+                                }
+                              >
+                                {req.status === "accepted"
+                                  ? "Playing"
+                                  : "Skipped"}
                               </Badge>
                             </div>
                           </CardContent>
@@ -416,36 +586,39 @@ export default function DanceManagementPage() {
                   )}
 
                   {!pendingRequests.length && !decidedRequests.length && (
-                    <Card>
-                      <CardContent className="py-8 text-center">
-                        <p className="text-muted-foreground">No song requests yet. Share the QR code or dance code with attendees!</p>
-                      </CardContent>
-                    </Card>
+                    <EmptyState
+                      icon={Music}
+                      title="No song requests yet"
+                      description="Share the dance code or QR code with attendees so they can request songs."
+                      testId="empty-requests"
+                    />
                   )}
                 </div>
               )}
             </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {dancesList.map((dance) => (
+          ) : isPro ? (
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+              {dancesList!.map((dance) => (
                 <Card
                   key={dance.id}
                   className="cursor-pointer hover-elevate"
                   onClick={() => setSelectedDance(dance)}
                   data-testid={`card-dance-${dance.id}`}
                 >
-                  <CardHeader>
-                    <CardTitle className="text-lg">{dance.name}</CardTitle>
-                    <CardDescription className="space-y-1">
-                      <span className="flex items-center gap-1">
+                  <CardHeader className="space-y-2">
+                    <CardTitle className="text-base sm:text-lg">
+                      {dance.name}
+                    </CardTitle>
+                    <CardDescription className="space-y-1 text-xs sm:text-sm">
+                      <span className="flex items-center gap-1.5">
                         <Calendar className="h-3.5 w-3.5" />
                         {dance.date}
                       </span>
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1.5">
                         <Clock className="h-3.5 w-3.5" />
                         {dance.startTime} - {dance.endTime}
                       </span>
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1.5">
                         <MapPin className="h-3.5 w-3.5" />
                         {dance.location}
                       </span>
@@ -453,31 +626,52 @@ export default function DanceManagementPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center justify-between gap-2">
-                      <Badge variant="outline" className="font-mono" data-testid={`text-dance-code-${dance.id}`}>
+                      <Badge
+                        variant="outline"
+                        className="font-mono"
+                        data-testid={`text-dance-code-${dance.id}`}
+                      >
                         {dance.code}
                       </Badge>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1">
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={(e) => { e.stopPropagation(); copyCode(dance.code); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            copyCode(dance.code);
+                          }}
                           data-testid={`button-copy-${dance.id}`}
+                          aria-label="Copy code"
                         >
-                          {copiedCode === dance.code ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                          {copiedCode === dance.code ? (
+                            <Check className="h-4 w-4" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
                         </Button>
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={(e) => { e.stopPropagation(); setQrDance(dance); setShowQR(true); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setQrDance(dance);
+                            setShowQR(true);
+                          }}
                           data-testid={`button-qr-${dance.id}`}
+                          aria-label="Show QR code"
                         >
                           <QrCode className="h-4 w-4" />
                         </Button>
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={(e) => { e.stopPropagation(); setDanceToDelete(dance); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDanceToDelete(dance);
+                          }}
                           data-testid={`button-delete-${dance.id}`}
+                          aria-label="Delete dance"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -487,20 +681,33 @@ export default function DanceManagementPage() {
                 </Card>
               ))}
             </div>
-          )}
+          ) : null}
 
-          <AlertDialog open={!!danceToDelete} onOpenChange={(open) => { if (!open) setDanceToDelete(null); }}>
+          <AlertDialog
+            open={!!danceToDelete}
+            onOpenChange={(open) => {
+              if (!open) setDanceToDelete(null);
+            }}
+          >
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Dance</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to delete <strong>{danceToDelete?.name}</strong>? This will permanently remove the dance and all of its song requests. This action cannot be undone.
+                  Are you sure you want to delete{" "}
+                  <strong>{danceToDelete?.name}</strong>? This will permanently
+                  remove the dance and all of its song requests. This action
+                  cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+                <AlertDialogCancel data-testid="button-cancel-delete">
+                  Cancel
+                </AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={() => danceToDelete && deleteDanceMutation.mutate(danceToDelete.id)}
+                  onClick={() =>
+                    danceToDelete &&
+                    deleteDanceMutation.mutate(danceToDelete.id)
+                  }
                   disabled={deleteDanceMutation.isPending}
                   data-testid="button-confirm-delete"
                 >
@@ -517,7 +724,7 @@ export default function DanceManagementPage() {
               </DialogHeader>
               {qrDance && (
                 <div className="flex flex-col items-center gap-4 py-4">
-                  <div className="bg-white p-4 rounded-lg">
+                  <div className="bg-white p-4 rounded-md">
                     <QRCodeSVG
                       value={getDanceRequestUrl(qrDance.code)}
                       size={240}
@@ -526,16 +733,28 @@ export default function DanceManagementPage() {
                     />
                   </div>
                   <div className="text-center space-y-2">
-                    <p className="text-sm text-muted-foreground">Scan to request songs</p>
+                    <p className="text-sm text-muted-foreground">
+                      Scan to request songs
+                    </p>
                     <div className="flex items-center gap-2 justify-center">
-                      <span className="font-mono text-lg font-bold" data-testid="text-qr-code">{qrDance.code}</span>
+                      <span
+                        className="font-mono text-lg font-bold"
+                        data-testid="text-qr-code"
+                      >
+                        {qrDance.code}
+                      </span>
                       <Button
                         size="icon"
                         variant="ghost"
                         onClick={() => copyCode(qrDance.code)}
                         data-testid="button-copy-qr-code"
+                        aria-label="Copy code"
                       >
-                        {copiedCode === qrDance.code ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        {copiedCode === qrDance.code ? (
+                          <Check className="h-4 w-4" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -545,7 +764,9 @@ export default function DanceManagementPage() {
                     onClick={() => {
                       const printWindow = window.open("", "_blank");
                       if (printWindow) {
-                        const svg = document.querySelector('[data-testid="qr-code-image"]');
+                        const svg = document.querySelector(
+                          '[data-testid="qr-code-image"]',
+                        );
                         printWindow.document.write(`
                           <html><head><title>QR Code - ${qrDance.name}</title>
                           <style>body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;margin:0}
@@ -570,18 +791,8 @@ export default function DanceManagementPage() {
               )}
             </DialogContent>
           </Dialog>
-
-          <footer className="mt-8 pt-6 border-t text-center">
-            <Link
-              href="/privacy"
-              className="text-sm text-muted-foreground hover:underline"
-              data-testid="link-footer-privacy"
-            >
-              Privacy Policy
-            </Link>
-          </footer>
         </div>
       </main>
-    </div>
+    </AppShell>
   );
 }
