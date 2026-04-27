@@ -77,6 +77,7 @@ export default function SongResult({ status, song, isSubscribed, spotifyConnecte
 
   const isSafe = status === "safe";
   const isReview = status === "review";
+  const isUnsafe = status === "unsafe";
   const evaluation = song.evaluation;
 
   const getStatusConfig = () => {
@@ -184,22 +185,36 @@ export default function SongResult({ status, song, isSubscribed, spotifyConnecte
                     </Badge>
                   )}
                   {song.spotifyUrl && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      asChild
-                      data-testid="button-spotify-link"
-                    >
-                      <a
-                        href={song.spotifyUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                    isUnsafe ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled
                         className="gap-2"
+                        title="Not recommended for church dances"
+                        data-testid="button-spotify-link"
                       >
                         <ExternalLink className="h-4 w-4" />
                         Open in Spotify
-                      </a>
-                    </Button>
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        asChild
+                        data-testid="button-spotify-link"
+                      >
+                        <a
+                          href={song.spotifyUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="gap-2"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                          Open in Spotify
+                        </a>
+                      </Button>
+                    )
                   )}
                   {song.spotifyTrackId && (
                     spotifyConnected ? (
@@ -207,6 +222,8 @@ export default function SongResult({ status, song, isSubscribed, spotifyConnecte
                         variant="outline"
                         size="sm"
                         onClick={() => setPlaylistPickerOpen(true)}
+                        disabled={isUnsafe}
+                        title={isUnsafe ? "Not recommended for church dances" : undefined}
                         className="gap-2"
                         data-testid="button-add-to-playlist"
                       >
@@ -218,6 +235,8 @@ export default function SongResult({ status, song, isSubscribed, spotifyConnecte
                         variant="outline"
                         size="sm"
                         onClick={onConnectSpotify}
+                        disabled={isUnsafe}
+                        title={isUnsafe ? "Not recommended for church dances" : undefined}
                         className="gap-2"
                         data-testid="button-connect-spotify"
                       >
