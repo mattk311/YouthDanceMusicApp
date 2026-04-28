@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build as esbuild } from "esbuild";
 import esbuildPluginPino from "esbuild-plugin-pino";
-import { rm } from "node:fs/promises";
+import { copyFile, rm } from "node:fs/promises";
 
 // Plugins (e.g. 'esbuild-plugin-pino') may use `require` to resolve dependencies
 globalThis.require = createRequire(import.meta.url);
@@ -118,6 +118,16 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
     `,
     },
   });
+
+  // connect-pg-simple loads its `table.sql` schema relative to its own
+  // __dirname at runtime (when createTableIfMissing is true). esbuild only
+  // bundles JS, so without this copy the production server throws ENOENT on
+  // first session write and Google login fails after the OAuth callback.
+  const require_ = createRequire(import.meta.url);
+  const pgSimplePkgJson = require_.resolve("connect-pg-simple/package.json");
+  const tableSqlSrc = path.join(path.dirname(pgSimplePkgJson), "table.sql");
+  await copyFile(tableSqlSrc, path.join(distDir, "table.sql"));
+  console.log(`  dist/table.sql                       (copied)`);
 }
 
 buildAll().catch((err) => {
