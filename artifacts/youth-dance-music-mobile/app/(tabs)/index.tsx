@@ -3,10 +3,8 @@ import { useMutation } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -17,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Brand } from "@/components/Brand";
 import { EmptyState } from "@/components/EmptyState";
+import { SongResultSkeleton } from "@/components/Skeleton";
 import { SongResultCard } from "@/components/SongResultCard";
 import { useColors } from "@/hooks/useColors";
 import { apiFetch, type SearchPublicResponse } from "@/lib/api";
@@ -123,16 +122,10 @@ export default function SearchScreen() {
               },
             ]}
           >
-            {search.isPending ? (
-              <ActivityIndicator color={colors.primaryForeground} />
-            ) : (
-              <>
-                <Feather name="search" size={16} color={colors.primaryForeground} />
-                <Text style={[styles.searchBtnText, { color: colors.primaryForeground }]}>
-                  Check song
-                </Text>
-              </>
-            )}
+            <Feather name="search" size={16} color={colors.primaryForeground} />
+            <Text style={[styles.searchBtnText, { color: colors.primaryForeground }]}>
+              {search.isPending ? "Checking…" : "Check song"}
+            </Text>
           </Pressable>
         </View>
 
@@ -150,7 +143,14 @@ export default function SearchScreen() {
           </View>
         ) : null}
 
-        {search.data && search.data.found && search.data.song ? (
+        {search.isPending ? (
+          <View style={styles.resultBlock}>
+            <Text style={[styles.resultLabel, { color: colors.mutedForeground }]}>Result</Text>
+            <SongResultSkeleton />
+          </View>
+        ) : null}
+
+        {!search.isPending && search.data && search.data.found && search.data.song ? (
           <View style={styles.resultBlock}>
             <View style={styles.resultHeader}>
               <Text style={[styles.resultLabel, { color: colors.mutedForeground }]}>Result</Text>

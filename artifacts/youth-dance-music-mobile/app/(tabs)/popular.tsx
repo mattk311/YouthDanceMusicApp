@@ -1,10 +1,11 @@
 import { Feather } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
-import { ActivityIndicator, FlatList, Platform, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { FlatList, Platform, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { EmptyState } from "@/components/EmptyState";
+import { SongCardSkeleton } from "@/components/Skeleton";
 import { SongResultCard } from "@/components/SongResultCard";
 import { useColors } from "@/hooks/useColors";
 import { apiFetch, type PopularResponse, type PopularSong } from "@/lib/api";
@@ -22,8 +23,23 @@ export default function PopularScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background, paddingTop: topPad }]}>
-        <ActivityIndicator color={colors.primary} />
+      <View style={[styles.root, { backgroundColor: colors.background }]}>
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: topPad, paddingBottom: tabBarSpace, gap: 10 }}
+        >
+          <View style={{ marginBottom: 10 }}>
+            <View style={styles.titleRow}>
+              <Feather name="trending-up" size={22} color={colors.primary} />
+              <Text style={[styles.h1, { color: colors.foreground }]}>Popular songs</Text>
+            </View>
+            <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+              The most-checked, youth-dance-friendly songs from across the community.
+            </Text>
+          </View>
+          {[0, 1, 2, 3, 4].map((i) => (
+            <SongCardSkeleton key={i} />
+          ))}
+        </ScrollView>
       </View>
     );
   }

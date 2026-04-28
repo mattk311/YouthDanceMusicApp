@@ -1,7 +1,12 @@
 import Constants from "expo-constants";
 
+interface AppExtra {
+  apiDomain?: string;
+}
+
 const ENV_DOMAIN = process.env.EXPO_PUBLIC_DOMAIN;
-const FALLBACK_DOMAIN = (Constants.expoConfig?.extra as any)?.apiDomain;
+const extra = Constants.expoConfig?.extra as AppExtra | undefined;
+const FALLBACK_DOMAIN = extra?.apiDomain;
 
 export const API_BASE = ENV_DOMAIN
   ? `https://${ENV_DOMAIN}`

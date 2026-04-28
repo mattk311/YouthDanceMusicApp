@@ -79,8 +79,12 @@ export function recommendationToKind(rec: string | null | undefined): StatusKind
     case "approved":
       return "approved";
     case "caution":
+    case "review":
+    case "review-needed":
       return "caution";
     case "unfit":
+    case "not-recommended":
+    case "unsafe":
       return "unfit";
     default:
       return "neutral";
