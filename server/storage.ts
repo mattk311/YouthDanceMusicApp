@@ -217,7 +217,7 @@ export class MemStorage implements IStorage {
 
   async deleteDance(id: string): Promise<void> {
     this.danceMap.delete(id);
-    for (const [reqId, req] of this.danceRequestMap.entries()) {
+    for (const [reqId, req] of Array.from(this.danceRequestMap.entries())) {
       if (req.danceId === id) this.danceRequestMap.delete(reqId);
     }
   }
