@@ -12,7 +12,8 @@ import AdSense from "@/components/AdSense";
 import SubscriptionCard from "@/components/SubscriptionCard";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { ShieldCheck, Sparkles, Music2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ShieldCheck, Sparkles, Music2, Wand2 } from "lucide-react";
 import type { User } from "@shared/schema";
 
 interface UsageData {
@@ -20,6 +21,21 @@ interface UsageData {
   remaining: number;
   isSubscribed: boolean;
 }
+
+const SUGGESTED_SEARCHES: Array<{
+  title: string;
+  artist: string;
+  testId: string;
+}> = [
+  { title: "Dynamite", artist: "Taio Cruz", testId: "dynamite" },
+  { title: "Happy", artist: "Pharrell Williams", testId: "happy" },
+  {
+    title: "Can't Stop the Feeling!",
+    artist: "Justin Timberlake",
+    testId: "cant-stop-the-feeling",
+  },
+  { title: "Shake It Off", artist: "Taylor Swift", testId: "shake-it-off" },
+];
 
 export default function HomePage() {
   const { toast } = useToast();
@@ -35,7 +51,11 @@ export default function HomePage() {
     queryKey: ["/api/auth/user"],
   });
 
-  const { data: usage, refetch: refetchUsage } = useQuery<UsageData>({
+  const {
+    data: usage,
+    refetch: refetchUsage,
+    isSuccess: usageLoaded,
+  } = useQuery<UsageData>({
     queryKey: ["/api/usage"],
     enabled: !!user,
   });
@@ -228,6 +248,38 @@ export default function HomePage() {
             onSearch={handleSearch}
             isLoading={searchMutation.isPending}
           />
+
+          {!searchResult &&
+            !searchMutation.isPending &&
+            usageLoaded &&
+            usage?.count === 0 && (
+              <div
+                className="space-y-3"
+                data-testid="suggested-searches"
+              >
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Wand2 className="h-4 w-4 text-primary" />
+                  <span>Try one of these to get started</span>
+                </div>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {SUGGESTED_SEARCHES.map((s) => (
+                    <Button
+                      key={`${s.title}-${s.artist}`}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSearch(s.title, s.artist)}
+                      disabled={searchMutation.isPending}
+                      data-testid={`button-suggestion-${s.testId}`}
+                    >
+                      <span className="font-medium">{s.title}</span>
+                      <span className="text-muted-foreground">
+                        · {s.artist}
+                      </span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
 
           {searchResult && (
             <div
