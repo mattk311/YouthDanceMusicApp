@@ -6,6 +6,10 @@ import { getSpotifyAuthUrl, exchangeSpotifyCode, isSpotifyConnected, getUserPlay
 import { evaluateSongForLDSChurchDance } from "../ai-evaluator";
 import type { User, Song } from "@workspace/db";
 import { storage } from "../storage";
+import {
+  publicRequestBurstLimiter,
+  publicRequestPerDanceLimiter,
+} from "../middlewares/rateLimits";
 import { getUncachableStripeClient, getStripePublishableKey } from "../stripeClient";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -981,7 +985,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Public dance request submission (no auth required - for mobile/event use)
-  app.post("/api/dances/:code/requests-public", async (req, res) => {
+  // Anti-abuse: per-IP burst limiter + per-IP-per-dance cap to prevent spam
+  // when bad actors rotate names to bypass the per-name cap below.
+  app.post(
+    "/api/dances/:code/requests-public",
+    publicRequestBurstLimiter,
+    publicRequestPerDanceLimiter,
+    async (req, res) => {
     try {
       const schema = z.object({
         requesterName: z.string().trim().min(1, "Your name is required").max(60),
@@ -1050,7 +1060,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error submitting guest request:", error);
       res.status(500).json({ error: "Failed to submit request" });
     }
-  });
+  },
+  );
 
   app.get("/api/songs/popular", requireAuth, async (req, res) => {
     try {
