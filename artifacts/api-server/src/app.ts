@@ -1,11 +1,11 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
-import pg from "pg";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { pgPool } from "./pgPool";
 import { WebhookHandlers } from "./webhookHandlers";
 
 const app: Express = express();
@@ -69,12 +69,7 @@ app.use(express.urlencoded({ extended: false }));
 const PgSession = connectPgSimple(session);
 let sessionStore: session.Store | undefined;
 
-if (process.env.DATABASE_URL) {
-  const pgPool = new pg.Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
-  });
-
+if (pgPool) {
   sessionStore = new PgSession({
     pool: pgPool,
     tableName: "session",
