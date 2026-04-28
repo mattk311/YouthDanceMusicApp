@@ -9,27 +9,27 @@ if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
   );
 }
 
-// Get the full callback URL from environment or construct it
+// Get the full callback URL from environment.
+//
+// Order of precedence:
+//   1. In Replit dev/preview (NODE_ENV !== "production" AND REPLIT_DEV_DOMAIN
+//      is set), always use the dev domain. This is critical: if we use a
+//      production callback URL here, Google will redirect the user to the
+//      production app after sign-in and the dev preview will never receive
+//      a session cookie.
+//   2. Otherwise, use PUBLIC_URL (preferred for prod) + the callback path.
+//   3. Otherwise, use OAUTH_CALLBACK_URL as-is (legacy support).
+//   4. Fall back to localhost for local dev outside Replit.
 const getCallbackURL = () => {
-  // Check if we have a custom OAuth callback URL configured (for published deployments)
-  //if (process.env.OAUTH_CALLBACK_URL) {
-  //  return process.env.OAUTH_CALLBACK_URL;
-  //}
-
-  // In Replit development/preview, use the REPLIT_DEV_DOMAIN
-  //if (process.env.REPLIT_DEV_DOMAIN) {
-  //return //`https://${process.env.REPLIT_DEV_DOMAIN}/auth/google/callback`;
-  //}
-
-  // Fallback for local development
-  //return "http://localhost:5000/auth/google/callback";
-  //return baseUrl + "/auth/google/callback";
+  const isDev = process.env.NODE_ENV !== "production";
+  if (isDev && process.env.REPLIT_DEV_DOMAIN) {
+    return `https://${process.env.REPLIT_DEV_DOMAIN}/auth/google/callback`;
+  }
   if (process.env.PUBLIC_URL) {
     return process.env.PUBLIC_URL + "/auth/google/callback";
-  } else {
-    if (process.env.OAUTH_CALLBACK_URL) {
-      return process.env.OAUTH_CALLBACK_URL;
-    }
+  }
+  if (process.env.OAUTH_CALLBACK_URL) {
+    return process.env.OAUTH_CALLBACK_URL;
   }
   return "http://localhost:5000/auth/google/callback";
 };
