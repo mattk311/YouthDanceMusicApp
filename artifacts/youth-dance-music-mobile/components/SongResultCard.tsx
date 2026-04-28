@@ -163,7 +163,7 @@ export function SongResultCard({
                 <View style={[styles.metaPill, { backgroundColor: colors.accent }]}>
                   <Feather name="bar-chart-2" size={11} color={colors.accentForeground} />
                   <Text style={[styles.metaText, { color: colors.accentForeground }]}>
-                    {evaluation.danceability}/100
+                    {evaluation.danceability}/10
                   </Text>
                 </View>
               ) : null}
