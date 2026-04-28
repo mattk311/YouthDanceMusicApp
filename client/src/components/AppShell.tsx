@@ -22,6 +22,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -245,6 +246,9 @@ export default function AppShell({
                   <SheetTitle className="flex items-center gap-2">
                     <BrandMark size="sm" />
                   </SheetTitle>
+                  <SheetDescription className="sr-only">
+                    Navigation menu and account options
+                  </SheetDescription>
                 </SheetHeader>
 
                 <div className="flex-1 overflow-y-auto p-3 space-y-1">

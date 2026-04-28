@@ -31,6 +31,22 @@ The backend uses Express.js with TypeScript, implementing session-based authenti
 - **Spotify "Add to Playlist"**: Users can connect their Spotify accounts to add approved songs directly to their playlists.
 - **Dance Type Classification**: AI identifies songs as fast/slow dance or line dance.
 
+## Testing
+
+Component tests live in `client/src/**/__tests__/*.test.tsx` and run with Vitest +
+React Testing Library + jsdom. Run them from the project root with:
+
+```
+npx vitest run
+```
+
+Current coverage focuses on the post–UI-refresh surface that does not require
+Google sign-in: the new `AppShell` mobile sheet menu open/close + nav variants,
+the `LoginCard` sign-in/privacy selectors, and the `SongResult` not-found /
+approved / unsafe states. Authenticated pages (Home, Popular Songs, Dance
+Management) still need to be exercised manually because Google OAuth cannot
+complete from the dev preview.
+
 ## External Dependencies
 
 - **Spotify Web API**: Used for song and artist search, track metadata retrieval, and "Add to Playlist" functionality.
