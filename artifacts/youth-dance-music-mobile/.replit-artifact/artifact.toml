@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/mobile/"
+title = "Youth Dance Music Mobile"
+version = "1.0.0"
+id = "artifacts/youth-dance-music-mobile"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/mobile/" ]
+localPort = 22191
+
+[services.development]
+run = "pnpm --filter @workspace/youth-dance-music-mobile run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/youth-dance-music-mobile", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/youth-dance-music-mobile", "run", "serve" ]
+
+[services.env]
+PORT = "22191"
+BASE_PATH = "/mobile/"

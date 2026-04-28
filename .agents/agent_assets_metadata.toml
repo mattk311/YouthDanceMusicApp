@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "T0DxkBwEMjqnQYBeGtNzR"
+uri = "file://artifacts/youth-dance-music-mobile/assets/images/icon.png"
+type = "image"
+title = "generated_image"

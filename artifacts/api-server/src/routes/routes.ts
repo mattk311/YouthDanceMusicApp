@@ -953,6 +953,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Popular songs - pro subscribers only
+  // Public popular songs (limited to top approved/recommended songs for the mobile app)
+  app.get("/api/songs/popular-public", async (_req, res) => {
+    try {
+      const allSongs = await storage.getAllSongsOrderedBySearchCount();
+      const filtered = allSongs
+        .filter((s) => !s.aiUnavailable && s.aiRecommendation && s.aiRecommendation !== "unfit")
+        .slice(0, 25)
+        .map((s) => ({
+          id: s.id,
+          songName: s.songName,
+          artistName: s.artistName,
+          albumName: s.albumName,
+          albumArt: s.albumArt,
+          spotifyUrl: s.spotifyUrl,
+          isExplicit: s.isExplicit,
+          aiRecommendation: s.aiRecommendation,
+          aiDanceType: s.aiDanceType,
+          aiDanceability: s.aiDanceability,
+          searchCount: s.searchCount,
+        }));
+      res.json({ songs: filtered });
+    } catch (error) {
+      console.error("Error getting public popular songs:", error);
+      res.status(500).json({ error: "Failed to get popular songs" });
+    }
+  });
+
+  // Public dance request submission (no auth required - for mobile/event use)
+  app.post("/api/dances/:code/requests-public", async (req, res) => {
+    try {
+      const schema = z.object({
+        requesterName: z.string().trim().min(1, "Your name is required").max(60),
+        songTitle: z.string().trim().min(1, "Song title is required").max(200),
+        artistName: z.string().trim().min(1, "Artist name is required").max(200),
+        albumArt: z.string().url().max(2000).optional(),
+        spotifyUrl: z.string().url().max(2000).optional(),
+      });
+
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        const issues = parsed.error.issues ?? [];
+        const msg = issues[0]?.message ?? "Invalid request";
+        return res.status(400).json({ error: msg });
+      }
+
+      const dance = await storage.getDanceByCode(req.params.code.toUpperCase());
+      if (!dance) {
+        return res.status(404).json({ error: "Dance not found" });
+      }
+      if (!dance.isActive) {
+        return res.status(400).json({ error: "This dance is no longer accepting requests" });
+      }
+
+      const guestUserId = `guest:${parsed.data.requesterName.toLowerCase().trim()}`;
+      const currentCount = await storage.getUserRequestCountForDance(guestUserId, dance.id);
+      if (currentCount >= MAX_REQUESTS_PER_DANCE) {
+        return res.status(400).json({ error: `You can only request up to ${MAX_REQUESTS_PER_DANCE} songs per dance` });
+      }
+
+      const request = await storage.createDanceRequest({
+        danceId: dance.id,
+        requesterUserId: guestUserId,
+        requesterName: parsed.data.requesterName,
+        songTitle: parsed.data.songTitle,
+        artistName: parsed.data.artistName,
+        albumArt: parsed.data.albumArt || null,
+        spotifyUrl: parsed.data.spotifyUrl || null,
+        status: "pending",
+      });
+
+      const searchKey = `${parsed.data.songTitle.toLowerCase().trim()}|${parsed.data.artistName.toLowerCase().trim()}`;
+      try {
+        await storage.incrementSongSearchCount(searchKey);
+      } catch (err) {
+        console.error("Failed to increment search count for guest request:", err);
+      }
+
+      try {
+        await storage.createNotification({
+          userId: dance.creatorUserId,
+          type: "song_request",
+          title: "New Song Request",
+          message: `${parsed.data.requesterName} requested "${parsed.data.songTitle}" by ${parsed.data.artistName} for ${dance.name}`,
+          danceId: dance.id,
+          requestId: request.id,
+          isRead: false,
+        });
+      } catch (err) {
+        console.error("Failed to create notification for guest request:", err);
+      }
+
+      const remaining = MAX_REQUESTS_PER_DANCE - (currentCount + 1);
+      res.json({ success: true, request, remaining });
+    } catch (error) {
+      console.error("Error submitting guest request:", error);
+      res.status(500).json({ error: "Failed to submit request" });
+    }
+  });
+
   app.get("/api/songs/popular", requireAuth, async (req, res) => {
     try {
       const user = req.user as User;
