@@ -45,3 +45,7 @@ integrations = ["javascript_mem_db:1.0.0", "spotify:1.0.0", "javascript_openai_a
 
 [userenv.production]
 SPOTIFY_REDIRECT_URI = "https://youthdancemusic.com/auth/spotify/callback"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 20000
