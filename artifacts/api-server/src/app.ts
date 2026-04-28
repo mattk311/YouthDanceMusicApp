@@ -106,6 +106,11 @@ async function initPassportAndRoutes() {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Bearer auth runs after passport.session so it can override req.user when
+  // a valid Authorization: Bearer <token> header is present (mobile clients).
+  const { bearerAuth } = await import("./middlewares/bearerAuth");
+  app.use(bearerAuth);
+
   const { registerRoutes } = await import("./routes/routes");
   await registerRoutes(app);
 

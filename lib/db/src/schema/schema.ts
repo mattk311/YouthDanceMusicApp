@@ -117,3 +117,19 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
+
+export const mobileSessions = pgTable("mobile_sessions", {
+  token: varchar("token").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastUsedAt: timestamp("last_used_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
+export const insertMobileSessionSchema = createInsertSchema(mobileSessions).omit({
+  createdAt: true,
+  lastUsedAt: true,
+});
+
+export type InsertMobileSession = z.infer<typeof insertMobileSessionSchema>;
+export type MobileSession = typeof mobileSessions.$inferSelect;

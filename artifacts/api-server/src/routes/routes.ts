@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { randomBytes } from "crypto";
 import passport from "../auth";
 import { searchSong, getAutocompleteSuggestions } from "../spotify";
 import { getSpotifyAuthUrl, exchangeSpotifyCode, isSpotifyConnected, getUserPlaylists, getPlaylistTracks, addTrackToPlaylist, disconnectSpotify } from "../spotifyUserClient";
@@ -58,14 +59,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(401).json({ error: "Not authenticated" });
   }
 
+  // Allowed deep-link redirects for mobile auth. We use exact-prefix matches
+  // for production schemes and only permit Expo dev (`exp://`) URIs in
+  // non-production. Restricting this is critical: this URL receives a freshly
+  // minted bearer token, so an attacker controlling the redirect can steal it.
+  const PROD_ALLOWED_PREFIXES = [
+    "youthdancemusic://auth-callback",
+    "youth-dance-music-mobile://auth-callback",
+  ];
+
+  function isAllowedMobileRedirect(redirect: string | undefined): boolean {
+    if (!redirect) return false;
+    if (PROD_ALLOWED_PREFIXES.some((p) => redirect === p || redirect.startsWith(p + "?"))) {
+      return true;
+    }
+    // Permit Expo Go dev URIs only outside production (e.g. exp://host:port/--/auth-callback)
+    if (process.env.NODE_ENV !== "production" && /^exp:\/\/[^/]+\/--\/auth-callback(\?|$)/.test(redirect)) {
+      return true;
+    }
+    return false;
+  }
+
   // Auth routes
   app.get(
     "/auth/google",
     (req, res, next) => {
       const returnTo = req.query.returnTo as string | undefined;
+      const mode = req.query.mode as string | undefined;
+      const redirect = req.query.redirect as string | undefined;
+
       if (returnTo && req.session) {
         (req.session as any).returnTo = returnTo;
       }
+
+      if (mode === "mobile") {
+        if (!isAllowedMobileRedirect(redirect)) {
+          return res.status(400).send("Invalid mobile redirect URI");
+        }
+        if (req.session) {
+          (req.session as any).mobileMode = true;
+          (req.session as any).mobileRedirect = redirect;
+        }
+      }
+
       passport.authenticate("google", { scope: ["profile", "email"] })(req, res, next);
     }
   );
@@ -73,7 +109,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get(
     "/auth/google/callback",
     (req, res, next) => {
-      passport.authenticate("google", (err: any, user: any, info: any) => {
+      passport.authenticate("google", async (err: any, user: any, info: any) => {
+        // Read mobile-mode flags then immediately clear them, regardless of
+        // outcome, so a failed mobile attempt can't taint a later browser sign-in.
+        const mobileMode = (req.session as any)?.mobileMode === true;
+        const mobileRedirect = (req.session as any)?.mobileRedirect as string | undefined;
+        if (req.session) {
+          delete (req.session as any).mobileMode;
+          delete (req.session as any).mobileRedirect;
+        }
+
         if (err) {
           console.error("[Auth] Google OAuth error:", err);
           return res.redirect("/?error=auth_failed");
@@ -82,6 +127,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("[Auth] Google OAuth no user returned:", info);
           return res.redirect("/?error=auth_failed");
         }
+
+        if (mobileMode && isAllowedMobileRedirect(mobileRedirect)) {
+          // Mobile flow: don't create a browser session — generate a token
+          // and bounce back into the native app via deep link.
+          try {
+            const token = randomBytes(32).toString("hex");
+            const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30); // 30 days
+            await storage.createMobileSession(token, (user as User).id, expiresAt);
+            const url = `${mobileRedirect}?token=${encodeURIComponent(token)}`;
+            return res.redirect(url);
+          } catch (tokenErr) {
+            console.error("[Auth] Mobile token creation error:", tokenErr);
+            return res.redirect("/?error=auth_failed");
+          }
+        }
+
         req.logIn(user, (loginErr) => {
           if (loginErr) {
             console.error("[Auth] Session login error:", loginErr);
@@ -102,6 +163,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ success: true });
     });
+  });
+
+  // Mobile clients use this to revoke their bearer token. The bearerAuth
+  // middleware exposes the token via req.mobileToken when authenticated.
+  app.post("/api/auth/mobile-logout", async (req, res) => {
+    const token = (req as any).mobileToken as string | undefined;
+    if (!token) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    try {
+      await storage.deleteMobileSession(token);
+      res.json({ success: true });
+    } catch (err) {
+      console.error("[Auth] Mobile logout error:", err);
+      res.status(500).json({ error: "Logout failed" });
+    }
   });
 
   app.get("/api/auth/user", (req, res) => {

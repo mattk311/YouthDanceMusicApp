@@ -9,11 +9,13 @@ import {
   type InsertDanceRequest,
   type Notification,
   type InsertNotification,
+  type MobileSession,
   users,
   songs,
   dances,
   danceRequests,
   notifications,
+  mobileSessions,
 } from "@workspace/db";
 import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -62,6 +64,11 @@ export interface IStorage {
   getUnreadNotificationCount(userId: string): Promise<number>;
   markNotificationRead(id: string): Promise<void>;
   markAllNotificationsRead(userId: string): Promise<void>;
+
+  createMobileSession(token: string, userId: string, expiresAt: Date): Promise<MobileSession>;
+  getValidMobileSession(token: string): Promise<MobileSession | undefined>;
+  touchMobileSession(token: string): Promise<void>;
+  deleteMobileSession(token: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -310,6 +317,37 @@ export class MemStorage implements IStorage {
       }
     });
   }
+
+  private mobileSessionMap: Map<string, MobileSession> = new Map();
+
+  async createMobileSession(token: string, userId: string, expiresAt: Date): Promise<MobileSession> {
+    const now = new Date();
+    const session: MobileSession = { token, userId, createdAt: now, lastUsedAt: now, expiresAt };
+    this.mobileSessionMap.set(token, session);
+    return session;
+  }
+
+  async getValidMobileSession(token: string): Promise<MobileSession | undefined> {
+    const session = this.mobileSessionMap.get(token);
+    if (!session) return undefined;
+    if (session.expiresAt.getTime() < Date.now()) {
+      this.mobileSessionMap.delete(token);
+      return undefined;
+    }
+    return session;
+  }
+
+  async touchMobileSession(token: string): Promise<void> {
+    const session = this.mobileSessionMap.get(token);
+    if (session) {
+      session.lastUsedAt = new Date();
+      this.mobileSessionMap.set(token, session);
+    }
+  }
+
+  async deleteMobileSession(token: string): Promise<void> {
+    this.mobileSessionMap.delete(token);
+  }
 }
 
 export class DbStorage implements IStorage {
@@ -529,6 +567,40 @@ export class DbStorage implements IStorage {
       .update(notifications)
       .set({ isRead: true })
       .where(eq(notifications.userId, userId));
+  }
+
+  async createMobileSession(token: string, userId: string, expiresAt: Date): Promise<MobileSession> {
+    const result = await this.db
+      .insert(mobileSessions)
+      .values({ token, userId, expiresAt })
+      .returning();
+    return result[0];
+  }
+
+  async getValidMobileSession(token: string): Promise<MobileSession | undefined> {
+    const result = await this.db
+      .select()
+      .from(mobileSessions)
+      .where(eq(mobileSessions.token, token))
+      .limit(1);
+    const session = result[0];
+    if (!session) return undefined;
+    if (session.expiresAt.getTime() < Date.now()) {
+      await this.deleteMobileSession(token);
+      return undefined;
+    }
+    return session;
+  }
+
+  async touchMobileSession(token: string): Promise<void> {
+    await this.db
+      .update(mobileSessions)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(mobileSessions.token, token));
+  }
+
+  async deleteMobileSession(token: string): Promise<void> {
+    await this.db.delete(mobileSessions).where(eq(mobileSessions.token, token));
   }
 }
 

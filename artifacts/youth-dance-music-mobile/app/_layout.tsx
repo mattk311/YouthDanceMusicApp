@@ -10,12 +10,15 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
-import { Platform, useColorScheme } from "react-native";
+import { ActivityIndicator, Platform, useColorScheme, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { useColors } from "@/hooks/useColors";
+import SignInScreen from "./sign-in";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -29,8 +32,29 @@ const queryClient = new QueryClient({
   },
 });
 
-function RootLayoutNav() {
+function AuthGate() {
+  const { user, isLoading } = useAuth();
+  const colors = useColors();
   const scheme = useColorScheme();
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
+        <ActivityIndicator color={colors.primary} />
+        <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <>
+        <SignInScreen />
+        <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      </>
+    );
+  }
+
   return (
     <>
       <Stack screenOptions={{ headerBackTitle: "Back" }}>
@@ -63,7 +87,9 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
-              <RootLayoutNav />
+              <AuthProvider>
+                <AuthGate />
+              </AuthProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>

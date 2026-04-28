@@ -1,16 +1,18 @@
 import { Feather } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
 import React from "react";
-import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Brand } from "@/components/Brand";
 import { useColors } from "@/hooks/useColors";
+import { useAuth } from "@/contexts/AuthContext";
 import { API_BASE } from "@/lib/api";
 
 export default function AboutScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { user, signOut } = useAuth();
   const topPad = Platform.OS === "web" ? 67 + 16 : insets.top + 16;
   const tabBarSpace = Platform.OS === "web" ? 100 : 90;
 
@@ -20,16 +22,6 @@ export default function AboutScreen() {
       window.open(API_BASE, "_blank");
     } else {
       WebBrowser.openBrowserAsync(API_BASE).catch(() => {});
-    }
-  };
-
-  const openSignIn = () => {
-    if (!API_BASE) return;
-    const url = `${API_BASE}/auth/google`;
-    if (Platform.OS === "web") {
-      window.open(url, "_blank");
-    } else {
-      WebBrowser.openAuthSessionAsync(url, API_BASE).catch(() => {});
     }
   };
 
@@ -59,28 +51,41 @@ export default function AboutScreen() {
         </View>
 
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-          <Text style={[styles.cardTitle, { color: colors.foreground }]}>For DJs &amp; leaders</Text>
-          <Text style={[styles.cardText, { color: colors.mutedForeground }]}>
-            Create dances, manage incoming requests, and connect Spotify on the web. Sign in
-            with your Google account to get started.
-          </Text>
+          <Text style={[styles.cardTitle, { color: colors.foreground }]}>Your account</Text>
+          {user ? (
+            <View style={styles.accountRow} testID="row-account">
+              {user.avatar ? (
+                <Image source={{ uri: user.avatar }} style={styles.avatar} />
+              ) : (
+                <View style={[styles.avatar, styles.avatarFallback, { backgroundColor: colors.muted }]}>
+                  <Feather name="user" size={20} color={colors.mutedForeground} />
+                </View>
+              )}
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.accountName, { color: colors.foreground }]} numberOfLines={1} testID="text-account-name">
+                  {user.name || user.email}
+                </Text>
+                {user.email && user.name ? (
+                  <Text style={[styles.accountEmail, { color: colors.mutedForeground }]} numberOfLines={1} testID="text-account-email">
+                    {user.email}
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+          ) : null}
+
           <Pressable
-            onPress={openSignIn}
-            disabled={!API_BASE}
+            onPress={signOut}
             style={({ pressed }) => [
-              styles.primaryRow,
-              {
-                backgroundColor: colors.primary,
-                opacity: !API_BASE ? 0.5 : pressed ? 0.85 : 1,
-              },
+              styles.outlineRow,
+              { borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
             ]}
-            testID="button-sign-in-web"
+            testID="button-sign-out"
           >
-            <Feather name="log-in" size={16} color={colors.primaryForeground} />
-            <Text style={[styles.primaryRowText, { color: colors.primaryForeground }]}>
-              Sign in on the web
-            </Text>
+            <Feather name="log-out" size={16} color={colors.foreground} />
+            <Text style={[styles.outlineRowText, { color: colors.foreground }]}>Sign out</Text>
           </Pressable>
+
           <Pressable
             onPress={openWeb}
             disabled={!API_BASE}
@@ -142,16 +147,11 @@ const styles = StyleSheet.create({
   },
   featureTitle: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
   featureText: { fontFamily: "Inter_400Regular", fontSize: 13, lineHeight: 18 },
-  primaryRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    minHeight: 48,
-    borderRadius: 8,
-    marginTop: 6,
-  },
-  primaryRowText: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  accountRow: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 4 },
+  avatar: { width: 40, height: 40, borderRadius: 20 },
+  avatarFallback: { alignItems: "center", justifyContent: "center" },
+  accountName: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  accountEmail: { fontFamily: "Inter_400Regular", fontSize: 12, marginTop: 2 },
   outlineRow: {
     flexDirection: "row",
     alignItems: "center",

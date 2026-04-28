@@ -1,4 +1,5 @@
 import Constants from "expo-constants";
+import { getCurrentToken } from "@/lib/authToken";
 
 interface AppExtra {
   apiDomain?: string;
@@ -27,11 +28,13 @@ export async function apiFetch<T = any>(
   init?: RequestInit,
 ): Promise<T> {
   const url = `${API_BASE}${path}`;
+  const token = getCurrentToken();
   const res = await fetch(url, {
     ...init,
     headers: {
       Accept: "application/json",
       ...(init?.body ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers ?? {}),
     },
   });
