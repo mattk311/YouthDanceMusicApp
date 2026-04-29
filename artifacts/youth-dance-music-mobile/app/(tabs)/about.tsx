@@ -1,20 +1,57 @@
 import { Feather } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
-import React from "react";
-import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import { Alert, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Brand } from "@/components/Brand";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/contexts/AuthContext";
-import { API_BASE } from "@/lib/api";
+import { apiFetch, API_BASE } from "@/lib/api";
 
 export default function AboutScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user, signOut } = useAuth();
+  const [deleting, setDeleting] = useState(false);
   const topPad = Platform.OS === "web" ? 67 + 16 : insets.top + 16;
   const tabBarSpace = Platform.OS === "web" ? 100 : 90;
+
+  async function performDelete() {
+    setDeleting(true);
+    try {
+      await apiFetch("/api/auth/account", { method: "DELETE" });
+      // The backend has already revoked the bearer token; clear local state.
+      await signOut();
+    } catch (err) {
+      setDeleting(false);
+      const message = err instanceof Error ? err.message : "Please try again.";
+      if (Platform.OS === "web") {
+        window.alert(`Couldn't delete account. ${message}`);
+      } else {
+        Alert.alert("Couldn't delete account", message);
+      }
+    }
+  }
+
+  function confirmDelete() {
+    if (deleting) return;
+    if (Platform.OS === "web") {
+      const ok = window.confirm(
+        "Delete your account? This permanently removes your Youth Dance Music account, dances, song requests, and any subscription. This cannot be undone.",
+      );
+      if (ok) performDelete();
+      return;
+    }
+    Alert.alert(
+      "Delete your account?",
+      "This permanently removes your Youth Dance Music account, dances, song requests, and any subscription. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete account", style: "destructive", onPress: performDelete },
+      ],
+    );
+  }
 
   const openWeb = () => {
     if (!API_BASE) return;
@@ -98,6 +135,24 @@ export default function AboutScreen() {
             <Feather name="external-link" size={16} color={colors.foreground} />
             <Text style={[styles.outlineRowText, { color: colors.foreground }]}>
               Open the web app
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={confirmDelete}
+            disabled={deleting}
+            style={({ pressed }) => [
+              styles.outlineRow,
+              {
+                borderColor: colors.destructive,
+                opacity: deleting ? 0.5 : pressed ? 0.7 : 1,
+              },
+            ]}
+            testID="button-delete-account"
+          >
+            <Feather name="trash-2" size={16} color={colors.destructive} />
+            <Text style={[styles.outlineRowText, { color: colors.destructive }]}>
+              {deleting ? "Deleting account..." : "Delete account"}
             </Text>
           </Pressable>
         </View>

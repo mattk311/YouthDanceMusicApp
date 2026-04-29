@@ -8,6 +8,7 @@ import {
   Disc,
   LogOut,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -19,6 +20,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 import {
   Sheet,
   SheetContent,
@@ -113,9 +126,44 @@ export default function AppShell({
 }: AppShellProps) {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { toast } = useToast();
 
   const isPro = !!usage?.isSubscribed;
   const visibleLinks = NAV_LINKS.filter((l) => !l.proOnly || isPro);
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/auth/account", {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error(`Request failed (${res.status})`);
+      }
+      toast({
+        title: "Account deleted",
+        description: "Your account and data have been permanently removed.",
+      });
+      // Wipe cached user/auth queries and send the user back to the home page,
+      // which will render the sign-in screen because /api/auth/user now 401s.
+      queryClient.clear();
+      window.location.href = "/";
+    } catch (err) {
+      toast({
+        title: "Couldn't delete account",
+        description:
+          err instanceof Error
+            ? err.message
+            : "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+      setDeleting(false);
+      setDeleteOpen(false);
+    }
+  }
 
   const isActive = (href: string) =>
     href === "/" ? location === "/" : location.startsWith(href);
@@ -210,6 +258,15 @@ export default function AppShell({
                       Log out
                     </DropdownMenuItem>
                   )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setDeleteOpen(true)}
+                    data-testid="button-delete-account"
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete account
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : onSignIn ? (
@@ -400,6 +457,35 @@ export default function AppShell({
           </Link>
         </div>
       </footer>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent data-testid="dialog-delete-account">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes your Youth Dance Music account, the
+              dances you&rsquo;ve created, your song requests, notifications,
+              and any active subscription. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting} data-testid="button-delete-cancel">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteAccount();
+              }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-delete-confirm"
+            >
+              {deleting ? "Deleting..." : "Yes, delete my account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

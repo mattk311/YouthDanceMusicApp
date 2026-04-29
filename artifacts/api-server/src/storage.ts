@@ -20,7 +20,7 @@ import {
 import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { eq, sql, desc, and } from "drizzle-orm";
+import { eq, sql, desc, and, inArray } from "drizzle-orm";
 
 function generateDanceCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -69,6 +69,8 @@ export interface IStorage {
   getValidMobileSession(token: string): Promise<MobileSession | undefined>;
   touchMobileSession(token: string): Promise<void>;
   deleteMobileSession(token: string): Promise<void>;
+
+  deleteUserAccount(userId: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -348,6 +350,32 @@ export class MemStorage implements IStorage {
   async deleteMobileSession(token: string): Promise<void> {
     this.mobileSessionMap.delete(token);
   }
+
+  async deleteUserAccount(userId: string): Promise<void> {
+    // Delete notifications owned by user
+    for (const [id, n] of this.notificationMap) {
+      if (n.userId === userId) this.notificationMap.delete(id);
+    }
+    // Find dances created by user, then delete requests in those dances
+    const userDanceIds = new Set<string>();
+    for (const [id, d] of this.danceMap) {
+      if (d.creatorUserId === userId) userDanceIds.add(id);
+    }
+    // Delete requests submitted by user OR belonging to user's dances
+    for (const [id, r] of this.danceRequestMap) {
+      if (r.requesterUserId === userId || userDanceIds.has(r.danceId)) {
+        this.danceRequestMap.delete(id);
+      }
+    }
+    // Delete user's dances
+    for (const id of userDanceIds) this.danceMap.delete(id);
+    // Delete mobile sessions for user
+    for (const [token, s] of this.mobileSessionMap) {
+      if (s.userId === userId) this.mobileSessionMap.delete(token);
+    }
+    // Finally delete the user
+    this.users.delete(userId);
+  }
 }
 
 export class DbStorage implements IStorage {
@@ -601,6 +629,41 @@ export class DbStorage implements IStorage {
 
   async deleteMobileSession(token: string): Promise<void> {
     await this.db.delete(mobileSessions).where(eq(mobileSessions.token, token));
+  }
+
+  async deleteUserAccount(userId: string): Promise<void> {
+    // Order matters: child rows first, then parents.
+    await this.db.delete(notifications).where(eq(notifications.userId, userId));
+
+    // Find dances the user created so we can delete their requests too.
+    const userDances = await this.db
+      .select({ id: dances.id })
+      .from(dances)
+      .where(eq(dances.creatorUserId, userId));
+    const userDanceIds = userDances.map((d) => d.id);
+
+    // Delete requests the user made.
+    await this.db
+      .delete(danceRequests)
+      .where(eq(danceRequests.requesterUserId, userId));
+
+    // Delete requests on dances the user created.
+    if (userDanceIds.length > 0) {
+      await this.db
+        .delete(danceRequests)
+        .where(inArray(danceRequests.danceId, userDanceIds));
+    }
+
+    // Delete dances created by the user.
+    await this.db.delete(dances).where(eq(dances.creatorUserId, userId));
+
+    // Delete mobile sessions for the user.
+    await this.db
+      .delete(mobileSessions)
+      .where(eq(mobileSessions.userId, userId));
+
+    // Finally delete the user record.
+    await this.db.delete(users).where(eq(users.id, userId));
   }
 }
 

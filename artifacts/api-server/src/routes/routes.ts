@@ -189,6 +189,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Permanently delete the signed-in user's account and all associated data.
+  // Works for both web (cookie session) and mobile (bearer token) clients.
+  app.delete("/api/auth/account", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const user = req.user as User;
+    const userId = user.id;
+
+    // Best-effort: cancel any Stripe customer (also cancels active subscriptions).
+    if (user.stripeCustomerId) {
+      try {
+        const stripe = await getUncachableStripeClient();
+        await stripe.customers.del(user.stripeCustomerId);
+      } catch (err) {
+        req.log?.warn(
+          { err, userId, stripeCustomerId: user.stripeCustomerId },
+          "Failed to delete Stripe customer during account deletion",
+        );
+      }
+    }
+
+    try {
+      await storage.deleteUserAccount(userId);
+    } catch (err) {
+      req.log?.error({ err, userId }, "Account deletion failed");
+      return res.status(500).json({ error: "Failed to delete account" });
+    }
+
+    // Tear down whichever auth path the request came in on.
+    const mobileToken = (req as any).mobileToken as string | undefined;
+    if (mobileToken) {
+      // Mobile session row was already removed by deleteUserAccount; nothing else to do.
+      return res.json({ success: true });
+    }
+    req.logout((err) => {
+      if (err) {
+        req.log?.warn({ err, userId }, "Logout after account deletion failed");
+      }
+      res.json({ success: true });
+    });
+  });
+
   // Autocomplete suggestions route
   app.get("/api/songs/autocomplete", requireAuth, async (req, res) => {
     try {
