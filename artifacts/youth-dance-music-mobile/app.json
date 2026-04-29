@@ -15,11 +15,13 @@
     },
     "ios": {
       "supportsTablet": false,
+      "bundleIdentifier": "com.youthdancemusic.app",
       "infoPlist": {
         "NSCameraUsageDescription": "Youth Dance Music uses the camera to scan dance QR codes so you can quickly request a song."
       }
     },
     "android": {
+      "package": "com.youthdancemusic.app",
       "permissions": ["CAMERA"]
     },
     "web": {
