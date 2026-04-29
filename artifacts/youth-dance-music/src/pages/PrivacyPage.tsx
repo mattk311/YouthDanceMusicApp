@@ -20,19 +20,35 @@ export default function PrivacyPage() {
             </h1>
             
             <p className="text-muted-foreground mb-6">
-              Last updated: {new Date().toLocaleDateString()}
+              Last updated: April 29, 2026
             </p>
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-3">Information We Collect</h2>
               <p className="text-muted-foreground mb-4">
-                When you use Youth Dance Music, we collect the following information:
+                When you use Youth Dance Music (whether on the web or in the mobile app), we collect the following information:
               </p>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                 <li>Google account information (name, email, profile picture) when you sign in</li>
-                <li>Song search queries you submit</li>
-                <li>Usage data to improve our service</li>
+                <li>Song search queries and song requests you submit</li>
+                <li>Dances you create as a host (name, date, settings)</li>
+                <li>Usage data (which features you use, when, and how often) to improve our service</li>
+                <li>Basic device information (operating system, app version) for diagnostics</li>
               </ul>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold mb-3">Mobile App</h2>
+              <p className="text-muted-foreground mb-4">
+                Our Android and iOS apps store the following on your device:
+              </p>
+              <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                <li>A secure sign-in token (kept in the device's encrypted keystore) so you stay signed in between sessions</li>
+                <li>Camera access, only when you choose to scan a dance QR code &mdash; we do not record, save, or transmit camera images</li>
+              </ul>
+              <p className="text-muted-foreground mt-4">
+                Signing out of the app deletes the sign-in token from your device and revokes it on our servers.
+              </p>
             </section>
 
             <section className="mb-8">
@@ -84,6 +100,23 @@ export default function PrivacyPage() {
             </section>
 
             <section className="mb-8">
+              <h2 className="text-xl font-semibold mb-3">Children&rsquo;s Privacy</h2>
+              <p className="text-muted-foreground">
+                Youth Dance Music is intended for use by adults &mdash; primarily DJs, event hosts, and parents
+                organizing dances for younger audiences. The app is not directed at children under 13, and we do
+                not knowingly collect personal information from children under 13. If you believe a child has
+                provided us with personal information, please contact us at{" "}
+                <a
+                  href="mailto:privacy@youthdancemusic.com"
+                  className="text-primary underline"
+                >
+                  privacy@youthdancemusic.com
+                </a>{" "}
+                and we will delete it.
+              </p>
+            </section>
+
+            <section className="mb-8">
               <h2 className="text-xl font-semibold mb-3">Your Rights</h2>
               <p className="text-muted-foreground mb-4">
                 You have the right to:
@@ -97,10 +130,45 @@ export default function PrivacyPage() {
             </section>
 
             <section className="mb-8">
+              <h2 className="text-xl font-semibold mb-3">Account &amp; Data Deletion</h2>
+              <p className="text-muted-foreground mb-4">
+                To delete your account and all associated personal data (Google profile, song requests,
+                dances you&rsquo;ve created, and saved sign-in tokens), email us at{" "}
+                <a
+                  href="mailto:privacy@youthdancemusic.com"
+                  className="text-primary underline"
+                >
+                  privacy@youthdancemusic.com
+                </a>{" "}
+                from the email address linked to your Google account. We will confirm and complete the
+                deletion within 30 days.
+              </p>
+              <p className="text-muted-foreground">
+                You can also revoke Youth Dance Music&rsquo;s access to your Google account at any time
+                from your{" "}
+                <a
+                  href="https://myaccount.google.com/permissions"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline"
+                >
+                  Google account permissions page
+                </a>
+                .
+              </p>
+            </section>
+
+            <section className="mb-8">
               <h2 className="text-xl font-semibold mb-3">Contact Us</h2>
               <p className="text-muted-foreground">
-                If you have any questions about this Privacy Policy or our data practices, 
-                please contact us through the application.
+                If you have any questions about this Privacy Policy or our data practices, please email{" "}
+                <a
+                  href="mailto:privacy@youthdancemusic.com"
+                  className="text-primary underline"
+                >
+                  privacy@youthdancemusic.com
+                </a>
+                .
               </p>
             </section>
 
