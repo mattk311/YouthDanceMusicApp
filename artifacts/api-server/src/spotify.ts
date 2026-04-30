@@ -66,7 +66,8 @@ export async function searchSong(
 
   try {
     const query = artist ? `track:${title} artist:${artist}` : title;
-    const results = await spotify.search(query, ["track"], undefined, 1);
+    // Fetch up to 10 results so we can detect explicit versions of the same song
+    const results = await spotify.search(query, ["track"], undefined, 10);
 
     if (!results.tracks.items.length) {
       return null;
@@ -74,13 +75,29 @@ export async function searchSong(
 
     const track = results.tracks.items[0];
 
+    // Strip suffixes like "(Clean)", "[Clean Version]", "(Radio Edit)" for name comparison
+    const stripCleanSuffix = (s: string) =>
+      s.replace(/[\s\-–]*([\(\[](clean|clean version|radio edit|edited)[\)\]])/gi, "").trim().toLowerCase();
+
+    const baseTrackName = stripCleanSuffix(track.name);
+    const topArtistIds = new Set(track.artists.map((a) => a.id));
+
+    // Check if any result shares the same base name + an overlapping artist and is explicit.
+    // This catches cases where the first result is the clean version but an explicit one also exists.
+    const hasExplicitVersion = results.tracks.items.some(
+      (t) =>
+        t.explicit &&
+        stripCleanSuffix(t.name) === baseTrackName &&
+        t.artists.some((a) => topArtistIds.has(a.id))
+    );
+
     return {
       id: track.id,
       name: track.name,
       artists: track.artists.map((a) => a.name),
       album: track.album.name,
       albumArt: track.album.images[0]?.url,
-      explicit: track.explicit,
+      explicit: track.explicit || hasExplicitVersion,
       spotifyUrl: track.external_urls.spotify,
     };
   } catch (error) {

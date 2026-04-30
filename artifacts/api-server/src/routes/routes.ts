@@ -4,7 +4,7 @@ import { randomBytes } from "crypto";
 import passport from "../auth";
 import { searchSong, getAutocompleteSuggestions } from "../spotify";
 import { getSpotifyAuthUrl, exchangeSpotifyCode, isSpotifyConnected, getUserPlaylists, getPlaylistTracks, addTrackToPlaylist, disconnectSpotify } from "../spotifyUserClient";
-import { evaluateSongForLDSChurchDance } from "../ai-evaluator";
+import { evaluateSongForLDSChurchDance, type SongEvaluation } from "../ai-evaluator";
 import type { User, Song } from "@workspace/db";
 import { storage } from "../storage";
 import {
@@ -48,6 +48,61 @@ async function backfillSongAiFields(cachedSong: Song): Promise<Song> {
     console.error(`[Backfill] Failed for "${cachedSong.songName}":`, err);
   }
   return cachedSong;
+}
+
+// Songs marked as explicit on Spotify (or with an explicit version) are always
+// "not-recommended". This function ensures the DB record reflects that rule and
+// returns the corrected song. Safe to call on every cache hit — it is a no-op
+// when the rule is already satisfied.
+const EXPLICIT_CONCERN = "Explicit lyrics (marked as explicit on Spotify)";
+const EXPLICIT_REASONING_PREFIX =
+  "This song is marked as explicit on Spotify, which means it contains explicit language or content that is not appropriate for a church youth dance. ";
+
+async function enforceExplicitRule(song: Song): Promise<Song> {
+  if (!song.isExplicit || song.aiRecommendation === "not-recommended") {
+    return song;
+  }
+  const updatedConcerns = song.aiConcerns?.includes(EXPLICIT_CONCERN)
+    ? song.aiConcerns
+    : [EXPLICIT_CONCERN, ...(song.aiConcerns ?? [])];
+  const updatedReasoning = song.aiReasoning
+    ? `${EXPLICIT_REASONING_PREFIX}${song.aiReasoning}`
+    : EXPLICIT_REASONING_PREFIX.trim();
+  try {
+    const updated = await storage.updateSongBySearchKey(song.searchKey, {
+      aiRecommendation: "not-recommended",
+      aiConcerns: updatedConcerns,
+      aiReasoning: updatedReasoning,
+    });
+    if (updated) {
+      console.log(`[Explicit] Overrode recommendation to not-recommended for: ${song.songName} - ${song.artistName}`);
+      return updated;
+    }
+  } catch (err) {
+    console.error(`[Explicit] Failed to update explicit song "${song.songName}":`, err);
+    return { ...song, aiRecommendation: "not-recommended", aiConcerns: updatedConcerns, aiReasoning: updatedReasoning };
+  }
+  return song;
+}
+
+// Apply the explicit rule to a fresh AI evaluation before it is saved or returned.
+function overrideEvaluationIfExplicit(
+  explicit: boolean,
+  evaluation: SongEvaluation | null,
+): SongEvaluation | null {
+  if (!explicit || !evaluation || evaluation.recommendation === "not-recommended") {
+    return evaluation;
+  }
+  const concerns = evaluation.concerns.includes(EXPLICIT_CONCERN)
+    ? evaluation.concerns
+    : [EXPLICIT_CONCERN, ...evaluation.concerns];
+  return {
+    ...evaluation,
+    appropriate: false,
+    recommendation: "not-recommended",
+    concerns,
+    reasoning: `${EXPLICIT_REASONING_PREFIX}${evaluation.reasoning}`,
+  };
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -553,7 +608,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Cache hit for: ${title} - ${artistName}`);
 
         // Lazy backfill: re-evaluate songs cached before the danceability score existed
-        const cachedSong = await backfillSongAiFields(cachedSongInitial);
+        const backfilledSong = await backfillSongAiFields(cachedSongInitial);
+        // Enforce: explicit songs must always be not-recommended
+        const cachedSong = await enforceExplicitRule(backfilledSong);
 
         // Increment song search count
         await storage.incrementSongSearchCount(searchKey);
@@ -616,6 +673,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("AI evaluation failed, continuing without evaluation:", aiError);
         aiUnavailable = true;
       }
+
+      // Hard rule: explicit songs are always not-recommended, regardless of AI output
+      evaluation = overrideEvaluationIfExplicit(track.explicit, evaluation);
 
       // Save to database only when lyrics were found (or when AI was unavailable due to a transient error)
       const lyricsFound = evaluation ? evaluation.lyricsFound : false;
@@ -699,7 +759,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const cachedSongInitial = await storage.getSongBySearchKey(searchKey);
       if (cachedSongInitial) {
-        const cachedSong = await backfillSongAiFields(cachedSongInitial);
+        const backfilledSong = await backfillSongAiFields(cachedSongInitial);
+        const cachedSong = await enforceExplicitRule(backfilledSong);
         const spotifyTrackId = cachedSong.spotifyUrl?.split('/track/')[1]?.split('?')[0] || null;
         return res.json({
           found: true,
@@ -737,6 +798,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("AI evaluation failed:", aiError);
         aiUnavailable = true;
       }
+
+      // Hard rule: explicit songs are always not-recommended, regardless of AI output
+      evaluation = overrideEvaluationIfExplicit(track.explicit, evaluation);
 
       const lyricsFoundPublic = evaluation ? evaluation.lyricsFound : false;
       if (aiUnavailable || lyricsFoundPublic) {
