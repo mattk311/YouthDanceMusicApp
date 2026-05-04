@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - Youthdancemusicapp
     paths:
       - 'artifacts/youth-dance-music-mobile/**'
       - '.github/workflows/eas-build-android.yml'
