@@ -31,12 +31,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build Android APK with EAS
+      - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Run EAS build
+      - name: Link EAS project
+        working-directory: artifacts/youth-dance-music-mobile
+        run: eas init --id 6a9dd245-610e-4999-8098-58289c4261b4 --non-interactive
+
+      - name: Build Android APK
         working-directory: artifacts/youth-dance-music-mobile
         run: eas build --platform android --profile preview --non-interactive
