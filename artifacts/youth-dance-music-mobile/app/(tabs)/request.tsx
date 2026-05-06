@@ -20,6 +20,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EmptyState } from "@/components/EmptyState";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { SongResultCard } from "@/components/SongResultCard";
+import {
+  SongAutocompleteInput,
+  type AutocompleteSuggestion,
+} from "@/components/SongAutocompleteInput";
 import { useColors } from "@/hooks/useColors";
 import {
   apiFetch,
@@ -501,16 +505,22 @@ function SongStep({
         <Text style={[styles.cardHint, { color: colors.mutedForeground }]}>
           We'll check if it's appropriate before sending.
         </Text>
-        <LabeledInput
+        <SongAutocompleteInput
+          type="track"
           icon="music"
           value={songTitle}
           onChangeText={setSongTitle}
+          onSelect={(s: AutocompleteSuggestion) => {
+            setSongTitle(s.name);
+            if (s.artist) setArtistName(s.artist);
+          }}
           placeholder="Song title"
           autoCapitalize="words"
           testID="input-request-song-title"
         />
         <View style={{ height: 10 }} />
-        <LabeledInput
+        <SongAutocompleteInput
+          type="artist"
           icon="user"
           value={artistName}
           onChangeText={setArtistName}

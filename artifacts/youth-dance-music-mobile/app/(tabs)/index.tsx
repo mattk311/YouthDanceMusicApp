@@ -7,7 +7,6 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
@@ -17,6 +16,10 @@ import { Brand } from "@/components/Brand";
 import { EmptyState } from "@/components/EmptyState";
 import { SongResultSkeleton } from "@/components/Skeleton";
 import { SongResultCard } from "@/components/SongResultCard";
+import {
+  SongAutocompleteInput,
+  type AutocompleteSuggestion,
+} from "@/components/SongAutocompleteInput";
 import { useColors } from "@/hooks/useColors";
 import { apiFetch, type SearchPublicResponse } from "@/lib/api";
 
@@ -71,44 +74,33 @@ export default function SearchScreen() {
 
         <View style={[styles.formCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
           <Text style={[styles.label, { color: colors.foreground }]}>Song title</Text>
-          <View style={[styles.inputWrap, { backgroundColor: colors.background, borderColor: colors.border }]}>
-            <Feather name="music" size={16} color={colors.mutedForeground} />
-            <TextInput
-              testID="input-song-title"
-              value={title}
-              onChangeText={setTitle}
-              placeholder="e.g. Levitating"
-              placeholderTextColor={colors.mutedForeground}
-              style={[styles.input, { color: colors.foreground }]}
-              returnKeyType="next"
-              autoCapitalize="words"
-              autoCorrect={false}
-            />
-            {title.length > 0 ? (
-              <Pressable onPress={() => setTitle("")} hitSlop={8}>
-                <Feather name="x-circle" size={16} color={colors.mutedForeground} />
-              </Pressable>
-            ) : null}
-          </View>
+          <SongAutocompleteInput
+            type="track"
+            icon="music"
+            value={title}
+            onChangeText={setTitle}
+            onSelect={(s: AutocompleteSuggestion) => {
+              setTitle(s.name);
+              if (s.artist) setArtist(s.artist);
+            }}
+            placeholder="e.g. Levitating"
+            returnKeyType="next"
+            testID="input-song-title"
+          />
 
           <Text style={[styles.label, { color: colors.foreground, marginTop: 14 }]}>
             Artist <Text style={{ color: colors.mutedForeground, fontFamily: "Inter_400Regular" }}>(optional)</Text>
           </Text>
-          <View style={[styles.inputWrap, { backgroundColor: colors.background, borderColor: colors.border }]}>
-            <Feather name="user" size={16} color={colors.mutedForeground} />
-            <TextInput
-              testID="input-artist-name"
-              value={artist}
-              onChangeText={setArtist}
-              placeholder="e.g. Dua Lipa"
-              placeholderTextColor={colors.mutedForeground}
-              style={[styles.input, { color: colors.foreground }]}
-              returnKeyType="search"
-              onSubmitEditing={onSearch}
-              autoCapitalize="words"
-              autoCorrect={false}
-            />
-          </View>
+          <SongAutocompleteInput
+            type="artist"
+            icon="user"
+            value={artist}
+            onChangeText={setArtist}
+            placeholder="e.g. Dua Lipa"
+            returnKeyType="search"
+            onSubmitEditing={onSearch}
+            testID="input-artist-name"
+          />
 
           <Pressable
             onPress={onSearch}
@@ -217,16 +209,6 @@ const styles = StyleSheet.create({
   subtitle: { fontFamily: "Inter_400Regular", fontSize: 14, lineHeight: 20 },
   formCard: { borderRadius: 12, borderWidth: 1, padding: 16, gap: 6, marginTop: 4 },
   label: { fontFamily: "Inter_600SemiBold", fontSize: 13, marginBottom: 6 },
-  inputWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    minHeight: 44,
-  },
-  input: { flex: 1, fontFamily: "Inter_400Regular", fontSize: 15, paddingVertical: 0 },
   searchBtn: {
     marginTop: 16,
     flexDirection: "row",
