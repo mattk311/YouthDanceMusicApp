@@ -12,8 +12,9 @@ interface Props {
 
 export function Brand({ size = 36, showWordmark = true, variant = "row" }: Props) {
   const colors = useColors();
-  const iconSize = Math.round(size * 0.55);
+  const iconSize = Math.round(size * 0.42);
   const radius = Math.round(size * 0.22);
+  const ydmSize = Math.round(size * 0.2);
 
   return (
     <View
@@ -34,6 +35,9 @@ export function Brand({ size = 36, showWordmark = true, variant = "row" }: Props
         ]}
       >
         <Feather name="music" size={iconSize} color={colors.primaryForeground} />
+        <Text style={[styles.ydm, { color: colors.primaryForeground, fontSize: ydmSize }]}>
+          YDM
+        </Text>
       </View>
       {showWordmark && (
         <View style={variant === "stack" ? styles.wordmarkStack : styles.wordmarkRow}>
@@ -62,9 +66,10 @@ const styles = StyleSheet.create({
   container: { alignItems: "center" },
   row: { flexDirection: "row", gap: 12 },
   stack: { flexDirection: "column", gap: 12, alignItems: "center" },
-  mark: { alignItems: "center", justifyContent: "center" },
+  mark: { alignItems: "center", justifyContent: "center", gap: 1 },
   wordmarkRow: { justifyContent: "center" },
   wordmarkStack: { alignItems: "center" },
   wordmark: { fontFamily: "Inter_700Bold", letterSpacing: -0.3 },
   tagline: { fontFamily: "Inter_500Medium", fontSize: 12, marginTop: 1 },
+  ydm: { fontFamily: "Inter_700Bold", letterSpacing: 1.5 },
 });
