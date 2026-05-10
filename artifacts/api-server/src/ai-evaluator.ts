@@ -42,8 +42,15 @@ Consider these specific factors:
    - Profanity or inappropriate language
    - Sexual content, innuendo, or double entendre
    - Violence or aggression
-   - Drug or alcohol references
    - Themes that contradict LDS church teachings
+   - **Drug and alcohol references — this requires DEEP analysis. Flag ANY of the following:**
+     - Alcohol by any name: liquor, booze, brew, hooch, sauce, spirits, suds, the bottle, liquid courage, drinks, shots, rounds, nightcap, hair of the dog
+     - Alcohol brand names or types: Jack (Jack Daniel's), JD, Henny (Hennessy), Patron, Patrón, Henny, Rémy, Rémy Martin, Jameson, Jim Beam, Crown (Crown Royal), Ciroc, Hennessy, Fireball, Bud, Budweiser, Coors, Modelo, Corona, Guinness, champagne, bubbly, rosé, wine, vino, red/white wine, sake, soju, vodka, tequila, mezcal, gin, rum, whiskey, whisky, bourbon, scotch, cognac, brandy, merlot, chardonnay, moscato, prosecco, cider, malt liquor, 40 (forty-ounce), sipping (when referring to alcohol), popping bottles, bottles in the club, ordering shots, getting lit, getting drunk, wasted, hammered, sloshed, tipsy, buzzed, blacked out, drank (used as a noun for a drink)
+     - Marijuana and cannabis: weed, pot, grass, herb, bud, ganja, mary jane, reefer, dope, sticky icky, kush, OG kush, blunt, joint, spliff, J, L (el), 420, 4:20, smoke/smoking up, blazing, toking, hitting a bowl, rolling up, chronic, loud (slang for strong weed), zaza, gas (as drug slang), pack (drug slang), tree, green, flower, hash, hashish, dabs, wax, concentrate, edibles (drug context), high, stoned, baked, faded (drug context)
+     - Hard drugs and pills: coke, cocaine, snow, blow, powder, white girl, white lines, nose candy, yayo, base, crack, rock, meth, crystal, ice, tina, speed, amp, uppers, ecstasy, molly, MDMA, rolls, beans, X, lean, sizzurp, purple drank, dirty sprite, promethazine, codeine, syrup, drip (drug context), Xanax, xans, bars (pill slang), percs, Percocet, perc, oxy, opioids, fetty, fentanyl, heroin, boy, smack, horse, needles/shooting up, ketamine, special K, shrooms, mushrooms, acid, LSD, tabs, trip, roll, Adderall, addy, study drug, popping pills, pill-popping
+     - General drug/substance culture: getting high, getting faded, getting lit, turnt/turned up (in a substance context), altered states, chasing a high, substance-fueled, all-night party context implying drug use, references to "the plug" (drug dealer), dealing, re-up, trapping, dope game, trap, scoring, connecting
+     - Euphemisms and coded language: "sipping on" (when not clearly referring to a non-alcoholic drink), "pouring up," "drink in my cup," "cup in my hand," "red cup," "solo cup," "turn up," "rolling" (can mean on ecstasy), "floating," "cloud 9" (in context), "feeling good tonight" paired with party imagery, "medicine" used as slang
+   - **If ANY of the above appear — even once, even in passing — the song must be rated "not-recommended."** Do not give partial credit or approve a song that glorifies, normalizes, or casually mentions substance use.
    
 2. **Artist's Public Stance**: Consider the artist's known public positions on:
    - LGBTQ+ issues and advocacy
@@ -87,7 +94,7 @@ Be balanced and fair in your assessment. Consider that:
 - Focus primarily on the actual song content
 - Use "review-needed" if there are minor concerns that church leaders should be aware of
 - Be specific about concerns rather than making general statements
-- If a song has any alcohol or drug references, it should be marked as "not-recommended"
+- **Drugs and alcohol: apply a ZERO-TOLERANCE rule.** If the song references drugs or alcohol in ANY form — including slang, brand names, abbreviations, or euphemisms — it must be "not-recommended". This includes a single passing mention of "Jack," "sipping," "shots," "weed," "lean," or any other substance term. Do NOT approve a song simply because the reference is brief or the rest of the song is clean. Name the specific word or phrase that triggered the concern in the "concerns" list.
 
 Provide only the JSON response, no additional text.`;
 
