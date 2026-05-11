@@ -78,6 +78,9 @@ export interface SearchEvaluation {
   recommendation: Recommendation;
   danceType?: string | null;
   danceability?: number | null;
+  reasoning?: string | null;
+  concerns?: string[] | null;
+  positives?: string[] | null;
 }
 
 export interface SearchPublicResponse {

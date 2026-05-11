@@ -19,6 +19,9 @@ interface Evaluation {
   recommendation?: string | null;
   danceType?: string | null;
   danceability?: number | null;
+  reasoning?: string | null;
+  concerns?: string[] | null;
+  positives?: string[] | null;
 }
 
 interface Props {
@@ -189,6 +192,53 @@ export function SongResultCard({
             <Text style={[styles.spotifyText, { color: colors.foreground }]}>Open in Spotify</Text>
           </Pressable>
         ) : null}
+
+        {(kind === "caution" || kind === "unfit") && evaluation ? (
+          <View style={[styles.details, { borderTopColor: colors.border }]}>
+            {evaluation.reasoning ? (
+              <Text
+                style={[styles.reasoning, { color: colors.mutedForeground }]}
+                testID="text-evaluation-reasoning"
+              >
+                {evaluation.reasoning}
+              </Text>
+            ) : null}
+
+            {evaluation.concerns && evaluation.concerns.length > 0 ? (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Feather name="alert-circle" size={13} color={tone.fg} />
+                  <Text style={[styles.sectionTitle, { color: tone.fg }]}>Concerns</Text>
+                </View>
+                {evaluation.concerns.map((concern, i) => (
+                  <View key={i} style={styles.bulletRow}>
+                    <Text style={[styles.bullet, { color: tone.fg }]}>•</Text>
+                    <Text style={[styles.bulletText, { color: colors.mutedForeground }]} testID={`concern-${i}`}>
+                      {concern}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            {evaluation.positives && evaluation.positives.length > 0 ? (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Feather name="check-circle" size={13} color={colors.success} />
+                  <Text style={[styles.sectionTitle, { color: colors.success }]}>Positives</Text>
+                </View>
+                {evaluation.positives.map((positive, i) => (
+                  <View key={i} style={styles.bulletRow}>
+                    <Text style={[styles.bullet, { color: colors.success }]}>•</Text>
+                    <Text style={[styles.bulletText, { color: colors.mutedForeground }]}>
+                      {positive}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+          </View>
+        ) : null}
       </View>
     </Pressable>
   );
@@ -250,4 +300,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   spotifyText: { fontFamily: "Inter_500Medium", fontSize: 13 },
+  details: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 12,
+    gap: 12,
+  },
+  reasoning: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  section: { gap: 6 },
+  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 5 },
+  sectionTitle: { fontFamily: "Inter_600SemiBold", fontSize: 12 },
+  bulletRow: { flexDirection: "row", gap: 6, paddingLeft: 2 },
+  bullet: { fontFamily: "Inter_600SemiBold", fontSize: 13, lineHeight: 18 },
+  bulletText: { flex: 1, fontFamily: "Inter_400Regular", fontSize: 13, lineHeight: 18 },
 });
