@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   Platform,
@@ -21,13 +22,20 @@ import {
   type AutocompleteSuggestion,
 } from "@/components/SongAutocompleteInput";
 import { useColors } from "@/hooks/useColors";
-import { apiFetch, type SearchPublicResponse } from "@/lib/api";
+import { apiFetch, type SearchPublicResponse, type UsageData } from "@/lib/api";
 
 export default function SearchScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
+
+  const usageQuery = useQuery({
+    queryKey: ["usage"],
+    queryFn: () => apiFetch<UsageData>("/api/usage"),
+  });
+
+  const isPro = usageQuery.data?.isSubscribed ?? false;
 
   const search = useMutation({
     mutationFn: async (vars: { title: string; artist: string }) => {
@@ -65,6 +73,30 @@ export default function SearchScreen() {
       >
         <View style={styles.header}>
           <Brand size={44} />
+          <Pressable
+            onPress={() => router.push("/subscription")}
+            style={[
+              styles.proBtn,
+              {
+                backgroundColor: isPro ? colors.warningSurface : colors.muted,
+              },
+            ]}
+            hitSlop={10}
+          >
+            <Feather
+              name="award"
+              size={16}
+              color={isPro ? colors.warning : colors.mutedForeground}
+            />
+            <Text
+              style={[
+                styles.proBtnLabel,
+                { color: isPro ? colors.warning : colors.mutedForeground },
+              ]}
+            >
+              {isPro ? "Pro" : "Free"}
+            </Text>
+          </Pressable>
         </View>
 
         <Text style={[styles.h1, { color: colors.foreground }]}>Verify a song</Text>
@@ -204,7 +236,21 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingHorizontal: 16, gap: 14 },
-  header: { alignItems: "flex-start", marginBottom: 4 },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+  proBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  proBtnLabel: { fontFamily: "Inter_600SemiBold", fontSize: 12 },
   h1: { fontFamily: "Inter_700Bold", fontSize: 24, marginTop: 4 },
   subtitle: { fontFamily: "Inter_400Regular", fontSize: 14, lineHeight: 20 },
   formCard: { borderRadius: 12, borderWidth: 1, padding: 16, gap: 6, marginTop: 4 },

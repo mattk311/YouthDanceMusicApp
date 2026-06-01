@@ -130,3 +130,17 @@ export interface SubmitGuestRequestResponse {
   success: boolean;
   remaining: number;
 }
+
+export interface UsageData {
+  count: number;
+  remaining: number;
+  isSubscribed: boolean;
+}
+
+export interface SubscriptionPriceData {
+  price_id: string;
+  unit_amount: number;
+  currency: string;
+  product_name: string;
+  description?: string | null;
+}
