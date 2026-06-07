@@ -32,6 +32,13 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {},
+    "internal": {
+      "android": {
+        "track": "internal",
+        "applicationId": "com.youthdancemusic.app",
+        "changesNotSentForReview": false
+      }
+    }
   }
 }
