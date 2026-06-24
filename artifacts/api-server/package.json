@@ -14,6 +14,7 @@
     "@spotify/web-api-ts-sdk": "^1.2.0",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
+    "apple-signin-auth": "^2.0.0",
     "connect-pg-simple": "^10.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2",

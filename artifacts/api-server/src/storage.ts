@@ -34,6 +34,7 @@ function generateDanceCode(): string {
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByGoogleId(googleId: string): Promise<User | undefined>;
+  getUserByAppleId(appleId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   getSongBySearchKey(searchKey: string): Promise<Song | undefined>;
@@ -98,11 +99,19 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getUserByAppleId(appleId: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.appleId === appleId,
+    );
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
     const user: User = {
       ...insertUser,
       id,
+      googleId: insertUser.googleId ?? null,
+      appleId: insertUser.appleId ?? null,
       avatar: insertUser.avatar || null,
       stripeCustomerId: null,
       stripeSubscriptionId: null,
@@ -401,6 +410,14 @@ export class DbStorage implements IStorage {
       .select()
       .from(users)
       .where(eq(users.googleId, googleId));
+    return result[0];
+  }
+
+  async getUserByAppleId(appleId: string): Promise<User | undefined> {
+    const result = await this.db
+      .select()
+      .from(users)
+      .where(eq(users.appleId, appleId));
     return result[0];
   }
 

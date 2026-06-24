@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { randomBytes } from "crypto";
+import appleSignin from "apple-signin-auth";
 import passport from "../auth";
 import { searchSong, getAutocompleteSuggestions } from "../spotify";
 import { getSpotifyAuthUrl, exchangeSpotifyCode, isSpotifyConnected, getUserPlaylists, getPlaylistTracks, addTrackToPlaylist, disconnectSpotify } from "../spotifyUserClient";
@@ -210,6 +211,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       })(req, res, next);
     }
   );
+
+  app.post("/api/auth/apple/mobile", async (req, res) => {
+    try {
+      const { identityToken, appleUserId, email, firstName, lastName } = req.body;
+      if (!identityToken || !appleUserId) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const payload = await appleSignin.verifyIdToken(identityToken, {
+        audience: "com.youthdancemusic.app",
+        ignoreExpiration: false,
+      });
+
+      if (payload.sub !== appleUserId) {
+        return res.status(401).json({ error: "Token mismatch" });
+      }
+
+      let user = await storage.getUserByAppleId(appleUserId);
+      if (!user) {
+        const name = [firstName, lastName].filter(Boolean).join(" ") || "Apple User";
+        user = await storage.createUser({
+          appleId: appleUserId,
+          email: email || payload.email || "",
+          name,
+          avatar: null,
+        });
+      }
+
+      const token = randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
+      await storage.createMobileSession(token, user.id, expiresAt);
+      res.json({ token });
+    } catch (err: any) {
+      console.error("[Auth] Apple Sign In error:", err?.message ?? err);
+      res.status(401).json({ error: "Apple authentication failed" });
+    }
+  });
 
   app.post("/api/auth/logout", (req, res) => {
     req.logout((err) => {

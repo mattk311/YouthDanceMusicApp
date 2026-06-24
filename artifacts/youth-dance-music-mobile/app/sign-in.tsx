@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
-import React from "react";
+import * as AppleAuthentication from "expo-apple-authentication";
+import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -10,9 +11,18 @@ import { useAuth } from "@/contexts/AuthContext";
 export default function SignInScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { signIn, isSigningIn, error } = useAuth();
+  const { signIn, signInWithApple, isSigningIn, isSigningInWithApple, error } = useAuth();
   const topPad = Platform.OS === "web" ? 24 : insets.top + 24;
   const bottomPad = Platform.OS === "web" ? 24 : insets.bottom + 24;
+
+  const [appleAvailable, setAppleAvailable] = useState(false);
+  useEffect(() => {
+    AppleAuthentication.isAvailableAsync()
+      .then(setAppleAvailable)
+      .catch(() => setAppleAvailable(false));
+  }, []);
+
+  const busy = isSigningIn || isSigningInWithApple;
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -51,12 +61,12 @@ export default function SignInScreen() {
 
           <Pressable
             onPress={signIn}
-            disabled={isSigningIn}
+            disabled={busy}
             style={({ pressed }) => [
               styles.primaryButton,
               {
                 backgroundColor: colors.primary,
-                opacity: isSigningIn ? 0.6 : pressed ? 0.85 : 1,
+                opacity: busy ? 0.6 : pressed ? 0.85 : 1,
               },
             ]}
             testID="button-sign-in-google"
@@ -72,6 +82,20 @@ export default function SignInScreen() {
               </>
             )}
           </Pressable>
+
+          {appleAvailable && (
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+              buttonStyle={
+                colors.background === "#ffffff" || colors.background === "#fff"
+                  ? AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                  : AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+              }
+              cornerRadius={8}
+              style={styles.appleButton}
+              onPress={signInWithApple}
+            />
+          )}
 
           <Text style={[styles.footnote, { color: colors.mutedForeground }]}>
             By continuing you agree to keep your sign-in for safety and request limits.
@@ -123,6 +147,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   primaryButtonText: { fontFamily: "Inter_600SemiBold", fontSize: 16 },
+  appleButton: {
+    width: "100%",
+    height: 52,
+  },
   footnote: {
     textAlign: "center",
     fontFamily: "Inter_400Regular",

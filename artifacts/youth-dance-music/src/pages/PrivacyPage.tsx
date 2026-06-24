@@ -20,7 +20,7 @@ export default function PrivacyPage() {
             </h1>
             
             <p className="text-muted-foreground mb-6">
-              Last updated: April 29, 2026
+              Last updated: June 24, 2026
             </p>
 
             <section className="mb-8">
@@ -29,7 +29,7 @@ export default function PrivacyPage() {
                 When you use Youth Dance Music (whether on the web or in the mobile app), we collect the following information:
               </p>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                <li>Google account information (name, email, profile picture) when you sign in</li>
+                <li>Google or Apple account information (name, email, profile picture) when you sign in</li>
                 <li>Song search queries and song requests you submit</li>
                 <li>Dances you create as a host (name, date, settings)</li>
                 <li>Usage data (which features you use, when, and how often) to improve our service</li>
@@ -70,10 +70,11 @@ export default function PrivacyPage() {
                 Our service integrates with the following third-party services:
               </p>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                <li><strong>Google OAuth</strong> - For secure authentication</li>
+                <li><strong>Google OAuth</strong> - For secure authentication (web and mobile)</li>
+                <li><strong>Apple Sign In</strong> - For secure authentication on iOS devices</li>
                 <li><strong>Spotify</strong> - To search for song information</li>
                 <li><strong>OpenAI</strong> - To analyze song content for appropriateness</li>
-                <li><strong>Google AdSense</strong> - To display relevant advertisements</li>
+                <li><strong>Stripe</strong> - To process Pro subscription payments</li>
               </ul>
               <p className="text-muted-foreground mt-4">
                 Each of these services has their own privacy policies that govern how they handle your data.
@@ -93,9 +94,9 @@ export default function PrivacyPage() {
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-3">Cookies</h2>
               <p className="text-muted-foreground">
-                We use cookies to maintain your login session and remember your preferences. 
-                Third-party services like Google AdSense may also use cookies to display 
-                relevant advertisements.
+                We use cookies to maintain your login session and remember your preferences.
+                The mobile app uses a secure bearer token stored in your device&rsquo;s encrypted
+                keystore instead of cookies.
               </p>
             </section>
 
@@ -132,7 +133,7 @@ export default function PrivacyPage() {
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-3">Account &amp; Data Deletion</h2>
               <p className="text-muted-foreground mb-4">
-                To delete your account and all associated personal data (Google profile, song requests,
+                To delete your account and all associated personal data (sign-in profile, song requests,
                 dances you&rsquo;ve created, and saved sign-in tokens), email us at{" "}
                 <a
                   href="mailto:privacy@youthdancemusic.com"
@@ -154,7 +155,16 @@ export default function PrivacyPage() {
                 >
                   Google account permissions page
                 </a>
-                .
+                . If you signed in with Apple, you can revoke access from{" "}
+                <a
+                  href="https://appleid.apple.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline"
+                >
+                  Apple ID settings
+                </a>
+                {" "}under &ldquo;Sign in with Apple.&rdquo;
               </p>
             </section>
 

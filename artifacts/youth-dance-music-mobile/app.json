@@ -41,7 +41,8 @@
         {
           "cameraPermission": "Youth Dance Music uses the camera to scan dance QR codes so you can quickly request a song."
         }
-      ]
+      ],
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true,

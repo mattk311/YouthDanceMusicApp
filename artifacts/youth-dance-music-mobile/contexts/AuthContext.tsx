@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Platform } from "react-native";
 import * as WebBrowser from "expo-web-browser";
+import * as AppleAuthentication from "expo-apple-authentication";
 
 import { API_BASE } from "@/lib/api";
 import { setCurrentToken } from "@/lib/authToken";
@@ -20,8 +21,10 @@ interface AuthContextValue {
   token: string | null;
   isLoading: boolean;
   isSigningIn: boolean;
+  isSigningInWithApple: boolean;
   error: string | null;
   signIn: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -43,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isSigningInWithApple, setIsSigningInWithApple] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const tokenRef = useRef<string | null>(null);
 
@@ -98,9 +102,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       let returnedToken: string | null = null;
 
       if (Platform.OS === "web") {
-        // On web, just open in a new tab and rely on returning to localStorage
-        // -- but mobile-mode redirects to a deep link, so this won't work on
-        // web. Provide a graceful fallback message.
         setError("Sign in is supported in the mobile app");
         return;
       }
@@ -108,7 +109,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const result = await WebBrowser.openAuthSessionAsync(url, MOBILE_REDIRECT_URI);
       if (result.type !== "success" || !result.url) {
         if (result.type === "cancel" || result.type === "dismiss") {
-          // User closed the browser — silent.
           return;
         }
         throw new Error("Sign in did not complete");
@@ -135,6 +135,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [fetchUser]);
 
+  const signInWithApple = useCallback(async () => {
+    if (!API_BASE) {
+      setError("Server not configured");
+      return;
+    }
+    setError(null);
+    setIsSigningInWithApple(true);
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      if (!credential.identityToken) {
+        throw new Error("No identity token from Apple");
+      }
+
+      const res = await fetch(`${API_BASE}/api/auth/apple/mobile`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          identityToken: credential.identityToken,
+          appleUserId: credential.user,
+          email: credential.email,
+          firstName: credential.fullName?.givenName,
+          lastName: credential.fullName?.familyName,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as any)?.error || "Apple sign in failed");
+      }
+
+      const { token: returnedToken } = await res.json() as { token: string };
+      const fetched = await fetchUser(returnedToken);
+      if (!fetched) {
+        throw new Error("Could not load user profile");
+      }
+
+      await saveToken(returnedToken);
+      tokenRef.current = returnedToken;
+      setToken(returnedToken);
+      setUser(fetched);
+    } catch (err: any) {
+      if (err?.code === "ERR_REQUEST_CANCELED") return;
+      console.error("[Auth] Apple signIn failed:", err);
+      setError(err?.message || "Apple sign in failed");
+    } finally {
+      setIsSigningInWithApple(false);
+    }
+  }, [fetchUser]);
+
   const signOut = useCallback(async () => {
     const t = tokenRef.current;
     try {
@@ -158,8 +213,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [token]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, token, isLoading, isSigningIn, error, signIn, signOut }),
-    [user, token, isLoading, isSigningIn, error, signIn, signOut],
+    () => ({ user, token, isLoading, isSigningIn, isSigningInWithApple, error, signIn, signInWithApple, signOut }),
+    [user, token, isLoading, isSigningIn, isSigningInWithApple, error, signIn, signInWithApple, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

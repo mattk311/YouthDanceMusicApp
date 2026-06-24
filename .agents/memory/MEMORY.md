@@ -1,0 +1,1 @@
+- [Apple Sign In mobile flow](apple-signin-mobile.md) — native iOS flow (not web redirect); identityToken POSTed to /api/auth/apple/mobile, no OAuth redirect needed
