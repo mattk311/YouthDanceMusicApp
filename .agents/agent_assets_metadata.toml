@@ -119,3 +119,9 @@ id = "R0a7IWDneMEdOgvbt2Ea0"
 uri = "file://attached_assets/app-store/android-phone/screenshot-popular.png"
 type = "image"
 title = "Android Screenshot 4 — Popular Songs (1080×1920)"
+
+[[outputs]]
+id = "UKAyEiIRRDjzODOWJ2ZR_"
+uri = "file://attached_assets/app-store/apple-app-store-listing.md"
+type = "text"
+title = "App Store Listing Copy — All Fields"
