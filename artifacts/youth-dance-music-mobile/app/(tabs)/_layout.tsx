@@ -19,6 +19,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "chart.line.uptrend.xyaxis", selected: "chart.line.uptrend.xyaxis" }} />
         <Label>Popular</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="dances">
+        <Icon sf={{ default: "calendar", selected: "calendar.circle.fill" }} />
+        <Label>Dances</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="request">
         <Icon sf={{ default: "paperplane", selected: "paperplane.fill" }} />
         <Label>Request</Label>
@@ -82,6 +86,13 @@ function ClassicTabLayout() {
         options={{
           title: "Popular",
           tabBarIcon: ({ color, size }) => <Feather name="trending-up" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="dances"
+        options={{
+          title: "Dances",
+          tabBarIcon: ({ color, size }) => <Feather name="calendar" size={size} color={color} />,
         }}
       />
       <Tabs.Screen

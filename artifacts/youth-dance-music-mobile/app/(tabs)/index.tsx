@@ -22,7 +22,7 @@ import {
   type AutocompleteSuggestion,
 } from "@/components/SongAutocompleteInput";
 import { useColors } from "@/hooks/useColors";
-import { apiFetch, type SearchPublicResponse, type UsageData } from "@/lib/api";
+import { apiFetch, ApiError, type SearchAuthResponse, type UsageData } from "@/lib/api";
 
 export default function SearchScreen() {
   const colors = useColors();
@@ -41,7 +41,7 @@ export default function SearchScreen() {
     mutationFn: async (vars: { title: string; artist: string }) => {
       const params = new URLSearchParams({ title: vars.title });
       if (vars.artist) params.set("artist", vars.artist);
-      return apiFetch<SearchPublicResponse>(`/api/songs/search-public?${params.toString()}`);
+      return apiFetch<SearchAuthResponse>(`/api/songs/search?${params.toString()}`);
     },
   });
 
@@ -154,17 +154,29 @@ export default function SearchScreen() {
         </View>
 
         {search.isError ? (
-          <View
-            style={[
-              styles.errorBox,
-              { backgroundColor: colors.destructiveSurface, borderColor: colors.destructive },
-            ]}
-          >
-            <Feather name="alert-circle" size={16} color={colors.destructive} />
-            <Text style={[styles.errorText, { color: colors.destructive }]} numberOfLines={3}>
-              {(search.error as Error)?.message ?? "Something went wrong. Please try again."}
-            </Text>
-          </View>
+          (search.error as ApiError)?.status === 403 ? (
+            <View style={[styles.limitBox, { backgroundColor: colors.warningSurface, borderColor: colors.warning }]}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Feather name="lock" size={15} color={colors.warning} />
+                <Text style={[styles.errorText, { color: colors.warningForeground, flex: 1 }]}>
+                  {(search.error as Error)?.message ?? "Daily search limit reached."}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => router.push("/subscription")}
+                style={[styles.upgradeBtn, { backgroundColor: colors.primary }]}
+              >
+                <Text style={[styles.upgradeBtnText, { color: colors.primaryForeground }]}>Upgrade to Pro</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View style={[styles.errorBox, { backgroundColor: colors.destructiveSurface, borderColor: colors.destructive }]}>
+              <Feather name="alert-circle" size={16} color={colors.destructive} />
+              <Text style={[styles.errorText, { color: colors.destructive }]} numberOfLines={3}>
+                {(search.error as Error)?.message ?? "Something went wrong. Please try again."}
+              </Text>
+            </View>
+          )
         ) : null}
 
         {search.isPending ? (
@@ -297,4 +309,7 @@ const styles = StyleSheet.create({
   tipIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   tipTitle: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
   tipText: { fontFamily: "Inter_400Regular", fontSize: 13, lineHeight: 18, marginTop: 2 },
+  limitBox: { gap: 10, borderWidth: 1, borderRadius: 8, padding: 12 },
+  upgradeBtn: { borderRadius: 8, alignItems: "center", justifyContent: "center", paddingVertical: 10 },
+  upgradeBtnText: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
 });

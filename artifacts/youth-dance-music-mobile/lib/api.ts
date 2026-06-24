@@ -62,7 +62,7 @@ export async function apiFetch<T = any>(
 
 // ---------- API response shapes ----------
 
-export type Recommendation = "approved" | "caution" | "unfit" | string;
+export type Recommendation = "approved" | "caution" | "not-recommended" | string;
 
 export interface SearchSong {
   title: string;
@@ -87,6 +87,30 @@ export interface SearchPublicResponse {
   found: boolean;
   song?: SearchSong;
   evaluation?: SearchEvaluation | null;
+}
+
+export interface SearchAuthResponse extends SearchPublicResponse {
+  usage?: UsageData;
+}
+
+export interface Dance {
+  id: string;
+  code: string;
+  name: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+  isActive: boolean;
+  creatorUserId?: string;
+}
+
+export interface CreateDanceBody {
+  name: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  location: string;
 }
 
 export interface PopularSong {

@@ -453,7 +453,7 @@ function SongStep({
 
   const songFound = search.data?.found && search.data?.song;
   const evaluation = search.data?.evaluation ?? null;
-  const isUnfit = (evaluation?.recommendation ?? "").toLowerCase() === "unfit";
+  const isUnfit = evaluation?.recommendation === "not-recommended";
 
   return (
     <View style={{ gap: 14 }}>
