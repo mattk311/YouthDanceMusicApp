@@ -1,8 +1,85 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "T0DxkBwEMjqnQYBeGtNzR"
 uri = "file://artifacts/youth-dance-music-mobile/assets/images/icon.png"
 type = "image"
 title = "generated_image"
+
+[[generated]]
+id = "ZQiX61phTwv_9czWP3xq7"
+uri = "file://attached_assets/app-store/screenshot-1-verify.png"
+type = "image"
+title = "app store screenshot verify screen"
+
+[[generated]]
+id = "Id2GpZONyUgYUCy1dfvrW"
+uri = "file://attached_assets/app-store/screenshot-2-result.png"
+type = "image"
+title = "app store screenshot song result"
+
+[[generated]]
+id = "UOicPXvwp4TOfUblydMtu"
+uri = "file://attached_assets/app-store/screenshot-3-pro.png"
+type = "image"
+title = "app store screenshot pro upgrade"
+
+[[generated]]
+id = "svgfFS48IgwRwzCAykMl0"
+uri = "file://attached_assets/app-store/screenshot-4-popular.png"
+type = "image"
+title = "app store screenshot popular songs"
+
+[[outputs]]
+id = "Yyt8CanAN4WB_RHglrsEy"
+uri = "file://attached_assets/app-store/app-store-icon-1024x1024.png"
+type = "image"
+title = "App Icon — 1024×1024px (no transparency)"
+
+[[outputs]]
+id = "vQ-m4jzr6e3faMzZyOcFL"
+uri = "file://attached_assets/app-store/6.7-inch/screenshot-verify.png"
+type = "image"
+title = "6.7\" Screenshot 1 — Verify a Song (1290×2796)"
+
+[[outputs]]
+id = "D8N4bc2Crold1Kf_5MA2T"
+uri = "file://attached_assets/app-store/6.7-inch/screenshot-result.png"
+type = "image"
+title = "6.7\" Screenshot 2 — Song Result (1290×2796)"
+
+[[outputs]]
+id = "7-fAA4mDKIj61vBnLjn8f"
+uri = "file://attached_assets/app-store/6.7-inch/screenshot-pro.png"
+type = "image"
+title = "6.7\" Screenshot 3 — Pro Upgrade (1290×2796)"
+
+[[outputs]]
+id = "uBbooPf6a7o_Ct-CMwtj3"
+uri = "file://attached_assets/app-store/6.7-inch/screenshot-popular.png"
+type = "image"
+title = "6.7\" Screenshot 4 — Popular Songs (1290×2796)"
+
+[[outputs]]
+id = "mtuJ7dlNcMa7uZGSOmk8u"
+uri = "file://attached_assets/app-store/6.9-inch/screenshot-verify.png"
+type = "image"
+title = "6.9\" Screenshot 1 — Verify a Song (1320×2868)"
+
+[[outputs]]
+id = "v1zqlbqgosgfcwNWo7xxk"
+uri = "file://attached_assets/app-store/6.9-inch/screenshot-result.png"
+type = "image"
+title = "6.9\" Screenshot 2 — Song Result (1320×2868)"
+
+[[outputs]]
+id = "zcAGBotzwJL3HR872DZQX"
+uri = "file://attached_assets/app-store/6.9-inch/screenshot-pro.png"
+type = "image"
+title = "6.9\" Screenshot 3 — Pro Upgrade (1320×2868)"
+
+[[outputs]]
+id = "oWkehPReYhfW5YdQUVgKg"
+uri = "file://attached_assets/app-store/6.9-inch/screenshot-popular.png"
+type = "image"
+title = "6.9\" Screenshot 4 — Popular Songs (1320×2868)"
