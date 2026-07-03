@@ -58,6 +58,7 @@
   "dependencies": {
     "expo-apple-authentication": "^56.0.4",
     "expo-camera": "~17.0.10",
-    "expo-secure-store": "~15.0.8"
+    "expo-secure-store": "~15.0.8",
+    "expo-updates": "~29.0.18"
   }
 }

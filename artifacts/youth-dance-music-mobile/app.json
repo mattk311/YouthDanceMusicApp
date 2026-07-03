@@ -5,7 +5,10 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": ["youthdancemusic", "youth-dance-music-mobile"],
+    "scheme": [
+      "youthdancemusic",
+      "youth-dance-music-mobile"
+    ],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -17,12 +20,20 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.youthdancemusic.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "Youth Dance Music uses the camera to scan dance QR codes so you can quickly request a song."
+        "NSCameraUsageDescription": "Youth Dance Music uses the camera to scan dance QR codes so you can quickly request a song.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "package": "com.youthdancemusic.app",
-      "permissions": ["CAMERA"]
+      "permissions": [
+        "CAMERA",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "CAMERA",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/images/icon.png"
@@ -53,6 +64,12 @@
         "projectId": "6a9dd245-610e-4999-8098-58289c4261b4"
       }
     },
-    "owner": "mattk311"
+    "owner": "mattk311",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6a9dd245-610e-4999-8098-58289c4261b4"
+    }
   }
 }
