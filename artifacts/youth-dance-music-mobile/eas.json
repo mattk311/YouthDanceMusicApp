@@ -21,6 +21,16 @@
         "EXPO_PUBLIC_DOMAIN": "youthdancemusic.com"
       }
     },
+    "testflight": {
+      "distribution": "store",
+      "channel": "preview",
+      "ios": {
+        "credentialsSource": "remote"
+      },
+      "env": {
+        "EXPO_PUBLIC_DOMAIN": "youthdancemusic.com"
+      }
+    },
     "production": {
       "channel": "production",
       "android": {
