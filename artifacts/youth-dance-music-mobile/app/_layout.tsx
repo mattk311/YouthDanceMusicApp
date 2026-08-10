@@ -63,6 +63,7 @@ function AuthGate() {
           name="subscription"
           options={{ presentation: "modal", headerShown: false }}
         />
+        <Stack.Screen name="dance/[id]" options={{ headerShown: true, title: "Dance" }} />
       </Stack>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
     </>

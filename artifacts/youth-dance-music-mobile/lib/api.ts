@@ -113,6 +113,21 @@ export interface CreateDanceBody {
   location: string;
 }
 
+export type DanceRequestStatus = "pending" | "accepted" | "rejected" | string;
+
+export interface DanceRequest {
+  id: string;
+  danceId: string;
+  requesterUserId: string;
+  requesterName: string;
+  songTitle: string;
+  artistName: string;
+  albumArt: string | null;
+  spotifyUrl: string | null;
+  status: DanceRequestStatus;
+  createdAt: string;
+}
+
 export interface PopularSong {
   id: string;
   songName: string;

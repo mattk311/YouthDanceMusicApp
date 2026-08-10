@@ -176,9 +176,15 @@ function FieldGroup({ label, children, colors }: { label: string; children: Reac
   );
 }
 
-function DanceRow({ dance, colors }: { dance: Dance; colors: any }) {
+function DanceRow({ dance, colors, onPress }: { dance: Dance; colors: any; onPress: () => void }) {
   return (
-    <View style={[styles.danceRow, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.danceRow,
+        { backgroundColor: colors.card, borderColor: colors.cardBorder, opacity: pressed ? 0.85 : 1 },
+      ]}
+    >
       <View style={{ flex: 1, gap: 4 }}>
         <Text style={[styles.danceName, { color: colors.foreground }]} numberOfLines={1}>
           {dance.name}
@@ -194,9 +200,12 @@ function DanceRow({ dance, colors }: { dance: Dance; colors: any }) {
         <View style={[styles.codePill, { backgroundColor: colors.primary }]}>
           <Text style={[styles.codeText, { color: colors.primaryForeground }]}>{dance.code}</Text>
         </View>
-        <View style={[styles.statusDot, { backgroundColor: dance.isActive ? "#22c55e" : colors.muted }]} />
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <View style={[styles.statusDot, { backgroundColor: dance.isActive ? "#22c55e" : colors.muted }]} />
+          <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+        </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -294,7 +303,27 @@ export default function DancesScreen() {
             onAction={() => setShowCreate(true)}
           />
         }
-        renderItem={({ item }) => <DanceRow dance={item} colors={colors} />}
+        renderItem={({ item }) => (
+          <DanceRow
+            dance={item}
+            colors={colors}
+            onPress={() =>
+              router.push({
+                pathname: "/dance/[id]",
+                params: {
+                  id: item.id,
+                  name: item.name,
+                  code: item.code,
+                  date: item.date,
+                  startTime: item.startTime,
+                  endTime: item.endTime,
+                  location: item.location,
+                  isActive: String(item.isActive),
+                },
+              })
+            }
+          />
+        )}
         refreshControl={
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
         }
