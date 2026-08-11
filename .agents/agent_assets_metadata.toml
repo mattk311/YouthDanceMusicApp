@@ -230,3 +230,31 @@ uri = "file://attached_assets/generated_images/ydm-logomark-final.png"
 type = "image"
 title = "Logo Mark (transparent)"
 description = "Favicon design on transparent background for flexible placement."
+
+[[outputs]]
+id = "kwKRWi_60NYUzZnXhk6nB"
+uri = "file://attached_assets/generated_images/ydm-web-logo-v2.png"
+type = "image"
+title = "Web Logo"
+description = "Red circle with dancers + \"Youth Dance Music\" bold wordmark on black."
+
+[[outputs]]
+id = "gDNEoCW_DL2739F4OQ5em"
+uri = "file://attached_assets/generated_images/ydm-app-icon-v2.png"
+type = "image"
+title = "App Icon — Android & iOS"
+description = "Red circle with dancer silhouettes, centered on black. Ready for Google Play and App Store."
+
+[[outputs]]
+id = "Z_d5YFdz1uL6rH5zNwMzh"
+uri = "file://attached_assets/generated_images/ydm-logomark-v2.png"
+type = "image"
+title = "Logo Mark (transparent)"
+description = "Red circle icon on transparent background for flexible placement."
+
+[[outputs]]
+id = "iQGcfY7-qOqn4WA3VyUY9"
+uri = "file://attached_assets/generated_images/ydm-favicon-v2.png"
+type = "image"
+title = "Favicon"
+description = "Compact red circle icon for browser tabs and small UI placements."
