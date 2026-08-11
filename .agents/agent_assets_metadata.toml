@@ -207,5 +207,26 @@ description = "Horizontal logo with group dancer icon and wordmark."
 id = "Py5gqhx8vZfuvK326qu5q"
 uri = "file://attached_assets/generated_images/ydm-favicon-group.png"
 type = "image"
-title = "Favicon / Small Icon"
-description = "Compact icon with social dancers for browser tabs."
+title = "Favicon"
+description = "Original favicon — the source design for the full set."
+
+[[outputs]]
+id = "HVsf9XN0HxjrsiHZUc844"
+uri = "file://attached_assets/generated_images/ydm-app-icon-final.png"
+type = "image"
+title = "App Icon — Android & iOS"
+description = "Favicon design scaled up for Google Play and App Store."
+
+[[outputs]]
+id = "wlR62hQTYsGSOCdkMSf5D"
+uri = "file://attached_assets/generated_images/ydm-web-logo-final.png"
+type = "image"
+title = "Web Logo"
+description = "Favicon icon + \"Youth Dance Music\" wordmark for website headers."
+
+[[outputs]]
+id = "jrVDWqghCgGbQxAnkyjuB"
+uri = "file://attached_assets/generated_images/ydm-logomark-final.png"
+type = "image"
+title = "Logo Mark (transparent)"
+description = "Favicon design on transparent background for flexible placement."
