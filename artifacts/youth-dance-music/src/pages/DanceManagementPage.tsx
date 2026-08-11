@@ -332,7 +332,7 @@ export default function DanceManagementPage() {
                   <Label htmlFor="dance-location">Location</Label>
                   <Input
                     id="dance-location"
-                    placeholder="e.g. Church Cultural Hall"
+                    placeholder="e.g. Youth Cultural Hall"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     required

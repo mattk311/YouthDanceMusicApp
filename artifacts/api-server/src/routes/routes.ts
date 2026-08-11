@@ -57,7 +57,7 @@ async function backfillSongAiFields(cachedSong: Song): Promise<Song> {
 // when the rule is already satisfied.
 const EXPLICIT_CONCERN = "Explicit lyrics (marked as explicit on Spotify)";
 const EXPLICIT_REASONING_PREFIX =
-  "This song is marked as explicit on Spotify, which means it contains explicit language or content that is not appropriate for a church youth dance. ";
+  "This song is marked as explicit on Spotify, which means it contains explicit language or content that is not appropriate for a youth dance. ";
 
 async function enforceExplicitRule(song: Song): Promise<Song> {
   if (!song.isExplicit || song.aiRecommendation === "not-recommended") {

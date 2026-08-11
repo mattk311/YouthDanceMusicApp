@@ -29,7 +29,7 @@ export default function LoginCard() {
               Youth Dance Music
             </CardTitle>
             <CardDescription className="text-sm sm:text-base">
-              Sign in to verify songs for your church youth dance.
+              Sign in to verify songs for your youth dance.
             </CardDescription>
           </div>
         </CardHeader>
@@ -37,7 +37,7 @@ export default function LoginCard() {
           <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2 text-muted-foreground">
               <ShieldCheck className="h-4 w-4 text-success flex-shrink-0" />
-              Lyric-checked, church-appropriate evaluations
+              Lyric-checked, youth-appropriate evaluations
             </li>
             <li className="flex items-center gap-2 text-muted-foreground">
               <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />

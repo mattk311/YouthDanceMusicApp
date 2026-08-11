@@ -201,7 +201,7 @@ export default function DanceRequestPage() {
     if (searchResult.evaluation?.recommendation === "not-recommended") {
       toast({
         title: "Cannot request this song",
-        description: "This song has not been approved for church dances.",
+        description: "This song has not been approved for youth dances.",
         variant: "destructive",
       });
       return;
@@ -627,7 +627,7 @@ export default function DanceRequestPage() {
                                       iconWrap:
                                         "bg-destructive/20 text-destructive",
                                       Icon: XCircle,
-                                      title: "Not approved for church dances",
+                                      title: "Not approved for youth dances",
                                     }
                                   : rec === "review-needed"
                                     ? {
@@ -725,7 +725,7 @@ export default function DanceRequestPage() {
                                 >
                                   {searchResult.song.explicit
                                     ? "This song is explicit and cannot be requested."
-                                    : "This song has not been approved for church dances."}
+                                    : "This song has not been approved for youth dances."}
                                 </p>
                               )}
                             </CardContent>

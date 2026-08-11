@@ -29,7 +29,7 @@ async function runAiEvaluation(
     ? `\n- Lyrics:\n"""\n${lyrics.slice(0, 4000)}\n"""`
     : "";
 
-  const prompt = `You are an expert advisor helping LDS (Latter-day Saint) church leaders evaluate whether a song is appropriate for a church youth dance.
+  const prompt = `You are an expert advisor helping LDS (Latter-day Saint) youth leaders evaluate whether a song is appropriate for a youth dance.
 
 Analyze the following song and provide a detailed evaluation:
 - Song Title: "${songTitle}"
@@ -92,7 +92,7 @@ Provide your evaluation in the following JSON format:
 Be balanced and fair in your assessment. Consider that:
 - Not every artist's personal views automatically disqualify their music
 - Focus primarily on the actual song content
-- Use "review-needed" if there are minor concerns that church leaders should be aware of
+- Use "review-needed" if there are minor concerns that youth leaders should be aware of
 - Be specific about concerns rather than making general statements
 - **Drugs and alcohol: apply a ZERO-TOLERANCE rule.** If the song references drugs or alcohol in ANY form — including slang, brand names, abbreviations, or euphemisms — it must be "not-recommended". This includes a single passing mention of "Jack," "sipping," "shots," "weed," "lean," or any other substance term. Do NOT approve a song simply because the reference is brief or the rest of the song is clean. Name the specific word or phrase that triggered the concern in the "concerns" list.
 

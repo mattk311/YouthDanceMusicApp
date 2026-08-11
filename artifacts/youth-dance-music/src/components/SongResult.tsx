@@ -103,7 +103,7 @@ export default function SongResult({
         banner: "bg-success/10 border-success/30",
         iconWrap: "bg-success/20 text-success",
         testid: "icon-safe",
-        title: "Approved for Church Dance",
+        title: "Approved for Youth Dance",
         subtitle: "This song is safe to play.",
         Icon: CheckCircle2,
       }
@@ -121,7 +121,7 @@ export default function SongResult({
           iconWrap: "bg-destructive/20 text-destructive",
           testid: "icon-unsafe",
           title: "Not Recommended",
-          subtitle: "This song is not appropriate for a church dance.",
+          subtitle: "This song is not appropriate for a youth dance.",
           Icon: XCircle,
         };
 
@@ -254,7 +254,7 @@ export default function SongResult({
                 size="sm"
                 disabled
                 className="gap-2"
-                title="Not recommended for church dances"
+                title="Not recommended for youth dances"
                 data-testid="button-spotify-link"
               >
                 <ExternalLink className="h-4 w-4" />
@@ -286,7 +286,7 @@ export default function SongResult({
                 onClick={() => setPlaylistPickerOpen(true)}
                 disabled={isUnsafe}
                 title={
-                  isUnsafe ? "Not recommended for church dances" : undefined
+                  isUnsafe ? "Not recommended for youth dances" : undefined
                 }
                 className="gap-2"
                 data-testid="button-add-to-playlist"
@@ -301,7 +301,7 @@ export default function SongResult({
                 onClick={onConnectSpotify}
                 disabled={isUnsafe}
                 title={
-                  isUnsafe ? "Not recommended for church dances" : undefined
+                  isUnsafe ? "Not recommended for youth dances" : undefined
                 }
                 className="gap-2"
                 data-testid="button-connect-spotify"
