@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Music, ShieldCheck, Sparkles, Music2 } from "lucide-react";
+import { ShieldCheck, Sparkles, Music2 } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 
 export default function LoginCard() {
@@ -19,9 +19,11 @@ export default function LoginCard() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-primary/10 via-background to-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-            <Music className="h-7 w-7" />
-          </div>
+          <img
+            src="/logo-mark.png"
+            alt="Youth Dance Music"
+            className="mx-auto h-14 w-14 rounded-2xl object-cover"
+          />
           <div className="space-y-2">
             <CardTitle className="text-2xl sm:text-3xl">
               Youth Dance Music
