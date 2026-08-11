@@ -181,3 +181,31 @@ uri = "file://attached_assets/generated_images/ydm-favicon-rbw_2.png"
 type = "image"
 title = "Favicon / Small Icon"
 description = "Compact icon for browser tabs and small placements."
+
+[[outputs]]
+id = "UgdooBn7HOdkKfzQbylAm"
+uri = "file://attached_assets/generated_images/ydm-logomark-group.png"
+type = "image"
+title = "Logo Mark"
+description = "Group of social dancers with musical note above — red, black & white."
+
+[[outputs]]
+id = "NNj_pijxeFYIbeQtO0HVX"
+uri = "file://attached_assets/generated_images/ydm-app-icon-group.png"
+type = "image"
+title = "App Icon — Android & iOS"
+description = "Square app icon with social dance group. Ready for Google Play and App Store."
+
+[[outputs]]
+id = "nNA1Fs-2NzzDHBadTtgCN"
+uri = "file://attached_assets/generated_images/ydm-web-logo-group.png"
+type = "image"
+title = "Web Logo"
+description = "Horizontal logo with group dancer icon and wordmark."
+
+[[outputs]]
+id = "Py5gqhx8vZfuvK326qu5q"
+uri = "file://attached_assets/generated_images/ydm-favicon-group.png"
+type = "image"
+title = "Favicon / Small Icon"
+description = "Compact icon with social dancers for browser tabs."
