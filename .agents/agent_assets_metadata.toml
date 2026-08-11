@@ -125,3 +125,31 @@ id = "UKAyEiIRRDjzODOWJ2ZR_"
 uri = "file://attached_assets/app-store/apple-app-store-listing.md"
 type = "text"
 title = "App Store Listing Copy — All Fields"
+
+[[outputs]]
+id = "FcVsNHvp6r741D3vwQ_oT"
+uri = "file://attached_assets/generated_images/ydm-logo-mark.svg"
+type = "image"
+title = "Logo Mark (SVG)"
+description = "Vector logo mark — musical note + dancer silhouette. Scales to any size. Use on light or dark backgrounds."
+
+[[outputs]]
+id = "u1UigOfsYzKQKZxyBb_Uy"
+uri = "file://attached_assets/generated_images/ydm-app-icon.png"
+type = "image"
+title = "App Icon — Android & iOS"
+description = "1024×1024 square app icon. Use for both Google Play and App Store submissions."
+
+[[outputs]]
+id = "Jhj5Y7QlKWSBu5Qa_ayZ-"
+uri = "file://attached_assets/generated_images/ydm-web-logo.png"
+type = "image"
+title = "Web Logo (transparent)"
+description = "Horizontal logo with transparent background for website headers and banners."
+
+[[outputs]]
+id = "i4KwF2ABlv8Ha9BEflnul"
+uri = "file://attached_assets/generated_images/ydm-favicon.png"
+type = "image"
+title = "Favicon / Small Icon"
+description = "Compact icon variant for browser tabs, notifications, and small UI placements."
