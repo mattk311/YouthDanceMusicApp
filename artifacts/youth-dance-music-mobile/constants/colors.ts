@@ -19,8 +19,8 @@ const colors = {
     cardForeground: "#1F2329",
     cardBorder: "#EAECEF",
 
-    // Primary action color (matches web --primary 217 91% 45%)
-    primary: "#1973E8",
+    // Primary action color — Youth Dance Music red
+    primary: "#CC1A1A",
     primaryForeground: "#FFFFFF",
 
     // Secondary
@@ -65,7 +65,7 @@ const colors = {
     cardForeground: "#E5E9ED",
     cardBorder: "#262A30",
 
-    primary: "#1973E8",
+    primary: "#CC1A1A",
     primaryForeground: "#FFFFFF",
 
     secondary: "#363A40",

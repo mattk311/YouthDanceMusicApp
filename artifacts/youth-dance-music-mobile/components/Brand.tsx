@@ -1,6 +1,5 @@
-import { Feather } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 
 import { useColors } from "@/hooks/useColors";
 
@@ -12,9 +11,6 @@ interface Props {
 
 export function Brand({ size = 36, showWordmark = true, variant = "row" }: Props) {
   const colors = useColors();
-  const iconSize = Math.round(size * 0.42);
-  const radius = Math.round(size * 0.22);
-  const ydmSize = Math.round(size * 0.2);
 
   return (
     <View
@@ -23,22 +19,11 @@ export function Brand({ size = 36, showWordmark = true, variant = "row" }: Props
         variant === "stack" ? styles.stack : styles.row,
       ]}
     >
-      <View
-        style={[
-          styles.mark,
-          {
-            width: size,
-            height: size,
-            borderRadius: radius,
-            backgroundColor: colors.primary,
-          },
-        ]}
-      >
-        <Feather name="music" size={iconSize} color={colors.primaryForeground} />
-        <Text style={[styles.ydm, { color: colors.primaryForeground, fontSize: ydmSize }]}>
-          YDM
-        </Text>
-      </View>
+      <Image
+        source={require("@/assets/images/logo-mark.png")}
+        style={{ width: size, height: size, borderRadius: Math.round(size * 0.18) }}
+        resizeMode="cover"
+      />
       {showWordmark && (
         <View style={variant === "stack" ? styles.wordmarkStack : styles.wordmarkRow}>
           <Text
@@ -66,10 +51,8 @@ const styles = StyleSheet.create({
   container: { alignItems: "center" },
   row: { flexDirection: "row", gap: 12 },
   stack: { flexDirection: "column", gap: 12, alignItems: "center" },
-  mark: { alignItems: "center", justifyContent: "center", gap: 1 },
   wordmarkRow: { justifyContent: "center" },
   wordmarkStack: { alignItems: "center" },
   wordmark: { fontFamily: "Inter_700Bold", letterSpacing: -0.3 },
   tagline: { fontFamily: "Inter_500Medium", fontSize: 12, marginTop: 1 },
-  ydm: { fontFamily: "Inter_700Bold", letterSpacing: 1.5 },
 });
