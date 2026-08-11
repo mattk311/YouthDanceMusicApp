@@ -153,3 +153,31 @@ uri = "file://attached_assets/generated_images/ydm-favicon.png"
 type = "image"
 title = "Favicon / Small Icon"
 description = "Compact icon variant for browser tabs, notifications, and small UI placements."
+
+[[outputs]]
+id = "NHUgnFFev_orLZayTVpcF"
+uri = "file://attached_assets/generated_images/ydm-logomark-rbw.png"
+type = "image"
+title = "Logo Mark"
+description = "Primary logo mark — dancer/note icon in red and white, transparent background."
+
+[[outputs]]
+id = "0esPegw1f7froUvwPLW1C"
+uri = "file://attached_assets/generated_images/ydm-app-icon-rbw_2.png"
+type = "image"
+title = "App Icon — Android & iOS"
+description = "Square app icon in red, black, and white. Ready for Google Play and App Store."
+
+[[outputs]]
+id = "_rxW-m30NsVgVywaQHxbn"
+uri = "file://attached_assets/generated_images/ydm-web-logo-rbw_2.png"
+type = "image"
+title = "Web Logo"
+description = "Horizontal logo with wordmark for website headers."
+
+[[outputs]]
+id = "lpnq-rkv4Txm1rbAFiqHz"
+uri = "file://attached_assets/generated_images/ydm-favicon-rbw_2.png"
+type = "image"
+title = "Favicon / Small Icon"
+description = "Compact icon for browser tabs and small placements."
