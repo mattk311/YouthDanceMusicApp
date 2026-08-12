@@ -144,7 +144,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mode = req.query.mode as string | undefined;
       const redirect = req.query.redirect as string | undefined;
 
-      if (returnTo && req.session) {
+      // Only accept relative paths — reject anything that could be an open redirect
+      // (e.g. "//evil.com" or "https://evil.com").
+      const isSafeReturnTo =
+        typeof returnTo === "string" &&
+        returnTo.startsWith("/") &&
+        !returnTo.startsWith("//");
+      if (isSafeReturnTo && req.session) {
         (req.session as any).returnTo = returnTo;
       }
 

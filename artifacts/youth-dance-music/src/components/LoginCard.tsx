@@ -12,7 +12,12 @@ import { SiGoogle } from "react-icons/si";
 
 export default function LoginCard() {
   const handleGoogleLogin = () => {
-    window.location.href = "/auth/google";
+    const path = window.location.pathname + window.location.search;
+    const returnTo = path !== "/" ? path : undefined;
+    const url = returnTo
+      ? `/auth/google?returnTo=${encodeURIComponent(returnTo)}`
+      : "/auth/google";
+    window.location.href = url;
   };
 
   return (
