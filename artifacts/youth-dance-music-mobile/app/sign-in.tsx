@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import * as AppleAuthentication from "expo-apple-authentication";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Brand } from "@/components/Brand";
@@ -23,6 +23,7 @@ export default function SignInScreen() {
   }, []);
 
   const busy = isSigningIn || isSigningInWithApple;
+  const openPrivacy = () => Linking.openURL("https://youthdancemusic.com/privacy");
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -98,7 +99,15 @@ export default function SignInScreen() {
           )}
 
           <Text style={[styles.footnote, { color: colors.mutedForeground }]}>
-            By continuing you agree to keep your sign-in for safety and request limits.
+            By continuing, you agree to our{" "}
+            <Text
+              accessibilityRole="link"
+              onPress={openPrivacy}
+              style={[styles.legalLink, { color: colors.primary }]}
+            >
+              Privacy Policy
+            </Text>
+            .
           </Text>
         </View>
       </ScrollView>
@@ -156,6 +165,10 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     fontSize: 12,
     lineHeight: 18,
+  },
+  legalLink: {
+    fontFamily: "Inter_600SemiBold",
+    textDecorationLine: "underline",
   },
   error: {
     fontFamily: "Inter_500Medium",

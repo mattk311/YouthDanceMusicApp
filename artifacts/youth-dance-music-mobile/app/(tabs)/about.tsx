@@ -62,6 +62,14 @@ export default function AboutScreen() {
     }
   };
 
+  const openPrivacy = () => {
+    WebBrowser.openBrowserAsync("https://youthdancemusic.com/privacy").catch(() => {});
+  };
+
+  const openSupport = () => {
+    WebBrowser.openBrowserAsync("https://youthdancemusic.com").catch(() => {});
+  };
+
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <ScrollView
@@ -121,6 +129,34 @@ export default function AboutScreen() {
           >
             <Feather name="log-out" size={16} color={colors.foreground} />
             <Text style={[styles.outlineRowText, { color: colors.foreground }]}>Sign out</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={openPrivacy}
+            style={({ pressed }) => [
+              styles.outlineRow,
+              { borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
+            ]}
+            testID="button-privacy-policy"
+          >
+            <Feather name="shield" size={16} color={colors.foreground} />
+            <Text style={[styles.outlineRowText, { color: colors.foreground }]}>
+              Privacy Policy
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={openSupport}
+            style={({ pressed }) => [
+              styles.outlineRow,
+              { borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
+            ]}
+            testID="button-support"
+          >
+            <Feather name="help-circle" size={16} color={colors.foreground} />
+            <Text style={[styles.outlineRowText, { color: colors.foreground }]}>
+              Support
+            </Text>
           </Pressable>
 
           <Pressable

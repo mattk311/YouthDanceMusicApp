@@ -65,7 +65,7 @@ Free accounts include 5 song searches per day — plenty for casual use. Upgrade
 • Priority AI evaluation
 • Subscription helps keep the app running and improving
 
-Sign in with your Google account to get started. No separate registration required.
+Sign in with your Apple or Google account to get started. No separate registration required.
 ```
 *1,742 / 4,000 characters*
 
@@ -74,7 +74,7 @@ Sign in with your Google account to get started. No separate registration requir
 ## Keywords
 *(100 characters max, comma-separated — no spaces after commas)*
 ```
-youth dance,safe songs,LDS dance,church dance,song checker,dance music,music filter,youth music,DJ
+youth dance,safe songs,event dance,song checker,dance music,music filter,youth music,DJ,playlist
 ```
 *97 / 100 characters*
 
@@ -123,7 +123,7 @@ Answer the App Store Connect questionnaire as follows:
 
 ## Copyright
 ```
-© 2025 Youth Dance Music
+© 2026 Youth Dance Music
 ```
 
 ---
@@ -147,6 +147,8 @@ Verify songs with AI, browse popular pre-checked tracks, and let dancers send re
 - [ ] Support URL live and accessible
 - [ ] Age rating questionnaire completed (result: 4+)
 - [ ] Content rights: check "This app does not contain, display, or access third-party content" — **unless** you want to note Spotify as a data source
-- [ ] Sign-in with Apple: because the app uses Google Sign-In as the only auth method, Apple requires you to also offer Sign in with Apple. See note below.
+- [ ] Sign in with Apple tested successfully in a production iOS build
+- [ ] App Privacy answers disclose account identifiers, purchase/subscription status, and app activity used to provide the service
+- [ ] Review Notes include a working test account or explain that reviewers can create one with Sign in with Apple
 
-> **Sign in with Apple note:** Apple's guideline 4.8 requires that apps offering third-party social login (Google, Facebook, etc.) must also offer Sign in with Apple as an option. This is the most common rejection reason for apps like this. Before submitting, add Sign in with Apple or be prepared to address this in your review notes. Let me know if you'd like help adding it.
+> **Sign in with Apple note:** The app includes native Sign in with Apple. Confirm the capability is enabled for bundle ID `com.youthdancemusic.app` in Apple Developer and test both first-time and returning-user sign-in before submission.

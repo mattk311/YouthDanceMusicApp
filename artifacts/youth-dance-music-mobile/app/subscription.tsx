@@ -5,6 +5,7 @@ import React from "react";
 import {
   ActivityIndicator,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -78,6 +79,7 @@ export default function SubscriptionScreen() {
   });
 
   const isPro = usageQuery.data?.isSubscribed ?? false;
+  const isIOS = Platform.OS === "ios";
   const usage = usageQuery.data;
 
   const formattedPrice = priceQuery.data
@@ -194,7 +196,7 @@ export default function SubscriptionScreen() {
             ) : null}
 
             {/* ── Price (free users only) ───────────────────── */}
-            {!isPro ? (
+            {!isPro && !isIOS ? (
               <View style={styles.priceBlock}>
                 {priceQuery.isLoading ? (
                   <ActivityIndicator color={colors.primary} size="small" />
@@ -285,7 +287,21 @@ export default function SubscriptionScreen() {
 
             {/* ── CTA ───────────────────────────────────────── */}
             <View style={styles.actions}>
-              {isPro ? (
+              {isIOS ? (
+                <View
+                  style={[
+                    styles.iosNotice,
+                    { backgroundColor: colors.card, borderColor: colors.cardBorder },
+                  ]}
+                >
+                  <Feather name="info" size={18} color={colors.primary} />
+                  <Text style={[styles.iosNoticeText, { color: colors.mutedForeground }]}>
+                    {isPro
+                      ? "Your existing Pro access is active."
+                      : "Pro purchasing is not currently available in the iOS app."}
+                  </Text>
+                </View>
+              ) : isPro ? (
                 <PrimaryButton
                   label={portalMutation.isPending ? "Opening…" : "Manage Subscription"}
                   icon="settings"
@@ -395,6 +411,20 @@ const styles = StyleSheet.create({
   errorText: { flex: 1, fontFamily: "Inter_500Medium", fontSize: 13 },
 
   actions: { gap: 10 },
+  iosNotice: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+  },
+  iosNoticeText: {
+    flex: 1,
+    fontFamily: "Inter_400Regular",
+    fontSize: 13,
+    lineHeight: 18,
+  },
   legalNote: {
     fontFamily: "Inter_400Regular",
     fontSize: 11,

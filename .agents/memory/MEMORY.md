@@ -1,1 +1,2 @@
 - [Apple Sign In mobile flow](apple-signin-mobile.md) — native iOS flow (not web redirect); identityToken POSTed to /api/auth/apple/mobile, no OAuth redirect needed
+- [iOS digital subscriptions](ios-digital-subscriptions.md) — do not expose Stripe checkout or portal links in iOS; use native App Store billing for Pro features
