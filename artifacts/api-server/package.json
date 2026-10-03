@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
+    "@replit/connectors-sdk": "^0.4.3",
     "@spotify/web-api-ts-sdk": "^1.2.0",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",

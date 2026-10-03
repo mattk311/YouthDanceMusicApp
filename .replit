@@ -45,3 +45,11 @@ externalPort = 3003
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+EXPO_PUBLIC_REVENUECAT_IOS_API_KEY = "appl_KcVCnTlUgbdSRhRdxKBSzQulkgq"
+REVENUECAT_APPLE_APP_STORE_APP_ID = "app3f00a8fadd"
+REVENUECAT_PROJECT_ID = "proj4c5af7ee"
+REVENUECAT_PRO_ENTITLEMENT_ID = "entl75013393a6"

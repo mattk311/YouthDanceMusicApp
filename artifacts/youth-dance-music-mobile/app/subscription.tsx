@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { useColors } from "@/hooks/useColors";
 import { apiFetch, type UsageData, type SubscriptionPriceData } from "@/lib/api";
+import { useSubscription } from "@/lib/revenuecat";
 
 const FREE_DAILY_LIMIT = 5;
 
@@ -50,6 +51,8 @@ const BENEFITS = [
 export default function SubscriptionScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const isIOS = Platform.OS === "ios";
+  const nativeSubscription = useSubscription();
 
   const usageQuery = useQuery({
     queryKey: ["usage"],
@@ -59,7 +62,7 @@ export default function SubscriptionScreen() {
   const priceQuery = useQuery({
     queryKey: ["subscription-price"],
     queryFn: () => apiFetch<SubscriptionPriceData>("/api/subscription/price"),
-    enabled: !usageQuery.data?.isSubscribed,
+    enabled: !isIOS && !usageQuery.data?.isSubscribed,
   });
 
   const checkoutMutation = useMutation({
@@ -78,13 +81,17 @@ export default function SubscriptionScreen() {
     },
   });
 
-  const isPro = usageQuery.data?.isSubscribed ?? false;
-  const isIOS = Platform.OS === "ios";
+  const nativePackage =
+    nativeSubscription.offerings?.current?.availablePackages[0];
+  const isPro =
+    (usageQuery.data?.isSubscribed ?? false) ||
+    (isIOS && nativeSubscription.isSubscribed);
   const usage = usageQuery.data;
 
   const formattedPrice = priceQuery.data
     ? `$${(priceQuery.data.unit_amount / 100).toFixed(2)}/month`
     : null;
+  const nativePrice = nativePackage?.product.priceString;
 
   const accentColor = isPro ? colors.warning : colors.primary;
   const accentSurface = isPro ? colors.warningSurface : colors.muted;
@@ -92,7 +99,17 @@ export default function SubscriptionScreen() {
   const mutationError =
     (checkoutMutation.error as Error)?.message ||
     (portalMutation.error as Error)?.message ||
+    (nativeSubscription.error as Error)?.message ||
+    (nativeSubscription.purchaseError as Error)?.message ||
+    (nativeSubscription.restoreError as Error)?.message ||
     null;
+
+  const openPrivacy = () =>
+    Linking.openURL("https://youthdancemusic.com/privacy");
+  const openTerms = () =>
+    Linking.openURL("https://youthdancemusic.com/terms");
+  const openAppleSubscriptions = () =>
+    Linking.openURL("https://apps.apple.com/account/subscriptions");
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -196,14 +213,14 @@ export default function SubscriptionScreen() {
             ) : null}
 
             {/* ── Price (free users only) ───────────────────── */}
-            {!isPro && !isIOS ? (
+            {!isPro ? (
               <View style={styles.priceBlock}>
-                {priceQuery.isLoading ? (
+                {(isIOS ? nativeSubscription.isLoading : priceQuery.isLoading) ? (
                   <ActivityIndicator color={colors.primary} size="small" />
-                ) : formattedPrice ? (
+                ) : (isIOS ? nativePrice : formattedPrice) ? (
                   <>
                     <Text style={[styles.price, { color: colors.foreground }]}>
-                      {formattedPrice}
+                      {isIOS ? `${nativePrice}/month` : formattedPrice}
                     </Text>
                     <Text style={[styles.priceSub, { color: colors.mutedForeground }]}>
                       Cancel anytime · No commitment
@@ -288,19 +305,74 @@ export default function SubscriptionScreen() {
             {/* ── CTA ───────────────────────────────────────── */}
             <View style={styles.actions}>
               {isIOS ? (
-                <View
-                  style={[
-                    styles.iosNotice,
-                    { backgroundColor: colors.card, borderColor: colors.cardBorder },
-                  ]}
-                >
-                  <Feather name="info" size={18} color={colors.primary} />
-                  <Text style={[styles.iosNoticeText, { color: colors.mutedForeground }]}>
-                    {isPro
-                      ? "Your existing Pro access is active."
-                      : "Pro purchasing is not currently available in the iOS app."}
+                <>
+                  {isPro ? (
+                    <PrimaryButton
+                      label="Manage Apple Subscription"
+                      icon="settings"
+                      onPress={openAppleSubscriptions}
+                      fullWidth
+                    />
+                  ) : (
+                    <PrimaryButton
+                      label={
+                        nativeSubscription.isPurchasing
+                          ? "Purchasing…"
+                          : nativePrice
+                            ? `Subscribe for ${nativePrice}/month`
+                            : "Subscribe to Pro"
+                      }
+                      icon="award"
+                      onPress={() => {
+                        if (nativePackage) {
+                          nativeSubscription.purchase(nativePackage).catch(() => {});
+                        }
+                      }}
+                      loading={nativeSubscription.isPurchasing}
+                      disabled={!nativePackage || nativeSubscription.isLoading}
+                      fullWidth
+                      testID="button-purchase-pro"
+                    />
+                  )}
+                  <Pressable
+                    onPress={() => nativeSubscription.restore().catch(() => {})}
+                    disabled={nativeSubscription.isRestoring}
+                    style={({ pressed }) => [
+                      styles.restoreButton,
+                      {
+                        borderColor: colors.border,
+                        opacity: pressed ? 0.7 : 1,
+                      },
+                    ]}
+                    testID="button-restore-purchases"
+                  >
+                    {nativeSubscription.isRestoring ? (
+                      <ActivityIndicator color={colors.primary} size="small" />
+                    ) : (
+                      <Text style={[styles.restoreText, { color: colors.primary }]}>
+                        Restore Purchases
+                      </Text>
+                    )}
+                  </Pressable>
+                  <Text style={[styles.legalNote, { color: colors.mutedForeground }]}>
+                    Payment is charged to your Apple ID. Subscription renews
+                    automatically each month unless canceled at least 24 hours
+                    before the end of the current period.
                   </Text>
-                </View>
+                  <View style={styles.legalLinks}>
+                    <Pressable onPress={openPrivacy} testID="link-privacy-policy">
+                      <Text style={[styles.legalLink, { color: colors.primary }]}>
+                        Privacy Policy
+                      </Text>
+                    </Pressable>
+                    <Text style={{ color: colors.mutedForeground }}>·</Text>
+                    <Pressable onPress={openTerms} testID="link-terms">
+                      <Text style={[styles.legalLink, { color: colors.primary }]}>
+                        Terms of Use
+                      </Text>
+                    </Pressable>
+                  </View>
+                </>
               ) : isPro ? (
                 <PrimaryButton
                   label={portalMutation.isPending ? "Opening…" : "Manage Subscription"}
@@ -411,6 +483,25 @@ const styles = StyleSheet.create({
   errorText: { flex: 1, fontFamily: "Inter_500Medium", fontSize: 13 },
 
   actions: { gap: 10 },
+  restoreButton: {
+    minHeight: 44,
+    borderWidth: 1,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  restoreText: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  legalLinks: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  legalLink: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 12,
+    textDecorationLine: "underline",
+  },
   iosNotice: {
     flexDirection: "row",
     alignItems: "center",

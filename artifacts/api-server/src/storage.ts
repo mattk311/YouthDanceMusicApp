@@ -22,6 +22,15 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { eq, sql, desc, and, inArray } from "drizzle-orm";
 
+export function userHasProAccess(
+  user: Pick<User, "subscriptionStatus" | "revenueCatEntitlementActive">,
+): boolean {
+  return (
+    user.subscriptionStatus === "active" ||
+    user.revenueCatEntitlementActive === true
+  );
+}
+
 function generateDanceCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
@@ -116,6 +125,7 @@ export class MemStorage implements IStorage {
       stripeCustomerId: null,
       stripeSubscriptionId: null,
       subscriptionStatus: null,
+      revenueCatEntitlementActive: false,
       dailySearchCount: 0,
       lastSearchDate: null,
       spotifyAccessToken: null,
@@ -210,7 +220,7 @@ export class MemStorage implements IStorage {
     const user = this.users.get(userId);
     if (!user) return { count: 0, remaining: 3, isSubscribed: false };
 
-    const isSubscribed = user.subscriptionStatus === "active";
+    const isSubscribed = userHasProAccess(user);
     const today = new Date().toISOString().split("T")[0];
     const count =
       user.lastSearchDate === today ? user.dailySearchCount || 0 : 0;
@@ -505,7 +515,7 @@ export class DbStorage implements IStorage {
     const user = await this.getUser(userId);
     if (!user) return { count: 0, remaining: 3, isSubscribed: false };
 
-    const isSubscribed = user.subscriptionStatus === "active";
+    const isSubscribed = userHasProAccess(user);
     const today = new Date().toISOString().split("T")[0];
     const count =
       user.lastSearchDate === today ? user.dailySearchCount || 0 : 0;

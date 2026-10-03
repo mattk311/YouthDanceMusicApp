@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import LoginCard from "@/components/LoginCard";
 import HomePage from "@/pages/HomePage";
 import PrivacyPage from "@/pages/PrivacyPage";
+import TermsPage from "@/pages/TermsPage";
 import PopularSongsPage from "@/pages/PopularSongsPage";
 import DanceManagementPage from "@/pages/DanceManagementPage";
 import DanceRequestPage from "@/pages/DanceRequestPage";
@@ -45,6 +46,7 @@ function Router() {
       <Switch>
         <Route path="/request" component={DanceRequestPage} />
         <Route path="/privacy" component={PrivacyPage} />
+        <Route path="/terms" component={TermsPage} />
         <Route component={LoginCard} />
       </Switch>
     );
@@ -57,6 +59,7 @@ function Router() {
       <Route path="/dances" component={DanceManagementPage} />
       <Route path="/request" component={DanceRequestPage} />
       <Route path="/privacy" component={PrivacyPage} />
+      <Route path="/terms" component={TermsPage} />
       <Route component={NotFound} />
     </Switch>
   );

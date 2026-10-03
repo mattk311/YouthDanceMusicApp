@@ -7,7 +7,7 @@ import { searchSong, getAutocompleteSuggestions } from "../spotify";
 import { getSpotifyAuthUrl, exchangeSpotifyCode, isSpotifyConnected, getUserPlaylists, getPlaylistTracks, addTrackToPlaylist, disconnectSpotify } from "../spotifyUserClient";
 import { evaluateSongForLDSChurchDance, type SongEvaluation } from "../ai-evaluator";
 import type { User, Song } from "@workspace/db";
-import { storage } from "../storage";
+import { storage, userHasProAccess } from "../storage";
 import {
   publicRequestBurstLimiter,
   publicRequestPerDanceLimiter,
@@ -17,6 +17,7 @@ import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { z } from "zod/v4";
+import { hasActiveRevenueCatProEntitlement } from "../revenueCatClient";
 
 const FREE_DAILY_LIMIT = 5;
 
@@ -359,6 +360,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting usage:", error);
       res.status(500).json({ error: "Failed to get usage" });
+    }
+  });
+
+  app.post("/api/subscription/revenuecat/sync", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const isActive = await hasActiveRevenueCatProEntitlement(user.id);
+      await storage.updateUser(user.id, {
+        revenueCatEntitlementActive: isActive,
+      });
+      const usage = await storage.getUserSearchUsage(user.id);
+      res.json({ isActive, isSubscribed: usage.isSubscribed });
+    } catch (error) {
+      console.error("Error syncing RevenueCat entitlement:", error);
+      res.status(502).json({ error: "Could not verify App Store subscription" });
     }
   });
 
@@ -916,7 +932,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   function requireProUser(req: any, res: any, next: any) {
     const user = req.user as User;
-    if (user.subscriptionStatus !== "active") {
+    if (!userHasProAccess(user)) {
       return res.status(403).json({ error: "Pro subscription required" });
     }
     next();

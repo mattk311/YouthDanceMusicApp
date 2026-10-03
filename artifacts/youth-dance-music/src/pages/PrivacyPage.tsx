@@ -32,6 +32,7 @@ export default function PrivacyPage() {
                 <li>Google or Apple account information (name, email, profile picture) when you sign in</li>
                 <li>Song search queries and song requests you submit</li>
                 <li>Dances you create as a host (name, date, settings)</li>
+                <li>Subscription status and purchase history provided by Apple and RevenueCat</li>
                 <li>Usage data (which features you use, when, and how often) to improve our service</li>
                 <li>Basic device information (operating system, app version) for diagnostics</li>
               </ul>
@@ -59,6 +60,7 @@ export default function PrivacyPage() {
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                 <li>Provide and maintain our song verification service</li>
                 <li>Authenticate your access to the application</li>
+                <li>Verify purchases and provide Pro subscription features</li>
                 <li>Cache search results to improve performance</li>
                 <li>Improve and personalize your experience</li>
               </ul>

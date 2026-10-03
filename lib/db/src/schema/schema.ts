@@ -13,6 +13,9 @@ export const users = pgTable("users", {
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   subscriptionStatus: text("subscription_status"),
+  revenueCatEntitlementActive: boolean("revenuecat_entitlement_active")
+    .default(false)
+    .notNull(),
   dailySearchCount: integer("daily_search_count").default(0),
   lastSearchDate: date("last_search_date"),
   spotifyAccessToken: text("spotify_access_token"),

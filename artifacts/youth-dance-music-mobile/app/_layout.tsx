@@ -19,9 +19,14 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import SignInScreen from "./sign-in";
+import {
+  initializeRevenueCat,
+  SubscriptionProvider,
+} from "@/lib/revenuecat";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+initializeRevenueCat();
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -93,7 +98,9 @@ export default function RootLayout() {
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
               <AuthProvider>
-                <AuthGate />
+                <SubscriptionProvider>
+                  <AuthGate />
+                </SubscriptionProvider>
               </AuthProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
