@@ -14,4 +14,4 @@ Apple Sign In uses a direct native iOS flow, not the Google web-redirect pattern
 
 **How to apply:** Apple button only shown when `AppleAuthentication.isAvailableAsync()` returns true (iOS 13+ only). Android/web users only see Google button.
 
-**Requires for production:** EAS build with `expo-apple-authentication` plugin (already in app.json); Apple Developer account must have Sign in with Apple capability enabled for bundle ID `com.youthdancemusic.app`.
+**Requires for production:** Native iOS release build with the Apple authentication plugin; Apple Developer account must have Sign in with Apple capability enabled for the app's bundle ID.
