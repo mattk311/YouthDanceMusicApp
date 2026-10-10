@@ -8,6 +8,27 @@
 import * as zod from "zod";
 
 /**
+ * Apple-linked accounts require fresh native Apple credentials so authorization can be revoked before data deletion.
+ * @summary Delete the authenticated account
+ */
+export const deleteAccountBodyIdentityTokenMax = 10000;
+
+export const deleteAccountBodyAuthorizationCodeMax = 10000;
+
+export const DeleteAccountBody = zod.object({
+  identityToken: zod
+    .string()
+    .min(1)
+    .max(deleteAccountBodyIdentityTokenMax)
+    .optional(),
+  authorizationCode: zod
+    .string()
+    .min(1)
+    .max(deleteAccountBodyAuthorizationCodeMax)
+    .optional(),
+});
+
+/**
  * Returns server health status
  * @summary Health check
  */

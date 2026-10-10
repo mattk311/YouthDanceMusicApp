@@ -5,6 +5,19 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface AccountDeletionInput {
+  /**
+   * @minLength 1
+   * @maxLength 10000
+   */
+  identityToken?: string;
+  /**
+   * @minLength 1
+   * @maxLength 10000
+   */
+  authorizationCode?: string;
+}
+
 export interface HealthStatus {
   status: string;
 }

@@ -82,7 +82,7 @@ export default function SubscriptionScreen() {
   });
 
   const nativePackage =
-    nativeSubscription.offerings?.current?.availablePackages[0];
+    nativeSubscription.offerings?.current?.monthly;
   const isPro =
     (usageQuery.data?.isSubscribed ?? false) ||
     (isIOS && nativeSubscription.isSubscribed);

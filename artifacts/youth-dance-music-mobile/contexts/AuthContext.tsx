@@ -14,6 +14,7 @@ export interface AuthUser {
   email: string;
   name: string;
   avatar?: string | null;
+  appleId?: string | null;
 }
 
 interface AuthContextValue {

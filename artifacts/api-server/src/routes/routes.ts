@@ -7,7 +7,7 @@ import { searchSong, getAutocompleteSuggestions } from "../spotify";
 import { getSpotifyAuthUrl, exchangeSpotifyCode, isSpotifyConnected, getUserPlaylists, getPlaylistTracks, addTrackToPlaylist, disconnectSpotify } from "../spotifyUserClient";
 import { evaluateSongForLDSChurchDance, type SongEvaluation } from "../ai-evaluator";
 import type { User, Song } from "@workspace/db";
-import { storage, userHasProAccess } from "../storage";
+import { storage } from "../storage";
 import {
   publicRequestBurstLimiter,
   publicRequestPerDanceLimiter,
@@ -17,7 +17,9 @@ import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { z } from "zod/v4";
-import { hasActiveRevenueCatProEntitlement } from "../revenueCatClient";
+import { subscriptionVerifier } from "../subscriptionFreshness";
+import { AppleRevocationError, revokeAppleAccount } from "../appleAccountRevocation";
+import { DeleteAccountBody } from "@workspace/api-zod";
 
 const FREE_DAILY_LIMIT = 5;
 
@@ -298,6 +300,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const user = req.user as User;
     const userId = user.id;
 
+    if (user.appleId) {
+      const parsed = DeleteAccountBody.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid Apple account confirmation" });
+      }
+      try {
+        await revokeAppleAccount(user.appleId, parsed.data);
+      } catch (error) {
+        const status = error instanceof AppleRevocationError ? error.status : 502;
+        const message = error instanceof AppleRevocationError
+          ? error.message : "Could not revoke Apple authorization";
+        return res.status(status).json({ error: message });
+      }
+    }
+
     // Best-effort: cancel any Stripe customer (also cancels active subscriptions).
     if (user.stripeCustomerId) {
       try {
@@ -366,7 +383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/subscription/revenuecat/sync", requireAuth, async (req, res) => {
     try {
       const user = req.user as User;
-      const isActive = await hasActiveRevenueCatProEntitlement(user.id);
+      const isActive = await subscriptionVerifier.verify(user.id, true);
       await storage.updateUser(user.id, {
         revenueCatEntitlementActive: isActive,
       });
@@ -930,12 +947,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== DANCE MANAGEMENT ROUTES =====
 
-  function requireProUser(req: any, res: any, next: any) {
+  async function requireProUser(req: any, res: any, next: any) {
     const user = req.user as User;
-    if (!userHasProAccess(user)) {
-      return res.status(403).json({ error: "Pro subscription required" });
+    try {
+      if (!await subscriptionVerifier.hasPro(user)) {
+        return res.status(403).json({ error: "Pro subscription required" });
+      }
+      next();
+    } catch {
+      return res.status(503).json({ error: "Could not verify subscription. Please try again." });
     }
-    next();
   }
 
   // Create a dance (pro users only)

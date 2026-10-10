@@ -21,6 +21,7 @@ import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { eq, sql, desc, and, inArray } from "drizzle-orm";
+import { subscriptionVerifier } from "./subscriptionFreshness";
 
 export function userHasProAccess(
   user: Pick<User, "subscriptionStatus" | "revenueCatEntitlementActive">,
@@ -220,7 +221,7 @@ export class MemStorage implements IStorage {
     const user = this.users.get(userId);
     if (!user) return { count: 0, remaining: 3, isSubscribed: false };
 
-    const isSubscribed = userHasProAccess(user);
+    const isSubscribed = await subscriptionVerifier.hasPro(user);
     const today = new Date().toISOString().split("T")[0];
     const count =
       user.lastSearchDate === today ? user.dailySearchCount || 0 : 0;
@@ -515,7 +516,7 @@ export class DbStorage implements IStorage {
     const user = await this.getUser(userId);
     if (!user) return { count: 0, remaining: 3, isSubscribed: false };
 
-    const isSubscribed = userHasProAccess(user);
+    const isSubscribed = await subscriptionVerifier.hasPro(user);
     const today = new Date().toISOString().split("T")[0];
     const count =
       user.lastSearchDate === today ? user.dailySearchCount || 0 : 0;

@@ -11,6 +11,30 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /auth/account:
+    delete:
+      operationId: deleteAccount
+      summary: Delete the authenticated account
+      description: Apple-linked accounts require fresh native Apple credentials so authorization can be revoked before data deletion.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountDeletionInput"
+      responses:
+        "200":
+          description: Account deleted
+        "400":
+          description: Fresh Apple confirmation required
+        "401":
+          description: Not authenticated
+        "403":
+          description: Apple identity does not match
+        "502":
+          description: Apple authorization could not be revoked
+        "503":
+          description: Apple revocation signing credentials are not configured
   /healthz:
     get:
       operationId: healthCheck
@@ -26,6 +50,19 @@ paths:
                 $ref: "#/components/schemas/HealthStatus"
 components:
   schemas:
+    AccountDeletionInput:
+      type: object
+      properties:
+        identityToken:
+          type: string
+          minLength: 1
+          maxLength: 10000
+          writeOnly: true
+        authorizationCode:
+          type: string
+          minLength: 1
+          maxLength: 10000
+          writeOnly: true
     HealthStatus:
       type: object
       properties:

@@ -141,7 +141,8 @@ export default function AppShell({
         credentials: "include",
       });
       if (!res.ok) {
-        throw new Error(`Request failed (${res.status})`);
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Request failed (${res.status})`);
       }
       toast({
         title: "Account deleted",
@@ -464,8 +465,9 @@ export default function AppShell({
             <AlertDialogTitle>Delete your account?</AlertDialogTitle>
             <AlertDialogDescription>
               This permanently removes your Youth Dance Music account, the
-              dances you&rsquo;ve created, your song requests, notifications,
-              and any active subscription. This cannot be undone.
+              dances you&rsquo;ve created, your song requests, and notifications.
+              App Store subscriptions must be canceled
+              separately in Apple subscription settings. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

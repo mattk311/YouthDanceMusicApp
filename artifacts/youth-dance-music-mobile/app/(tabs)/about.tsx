@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
+import * as AppleAuthentication from "expo-apple-authentication";
 import React, { useState } from "react";
 import { Alert, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -20,11 +21,29 @@ export default function AboutScreen() {
   async function performDelete() {
     setDeleting(true);
     try {
-      await apiFetch("/api/auth/account", { method: "DELETE" });
+      let appleCredentials;
+      if (user?.appleId) {
+        if (Platform.OS !== "ios") {
+          throw new Error("Delete your Apple-linked account from the iPhone app.");
+        }
+        const credential = await AppleAuthentication.signInAsync({ requestedScopes: [] });
+        if (credential.user !== user.appleId || !credential.identityToken || !credential.authorizationCode) {
+          throw new Error("Confirm the Apple account linked to this profile.");
+        }
+        appleCredentials = {
+          identityToken: credential.identityToken,
+          authorizationCode: credential.authorizationCode,
+        };
+      }
+      await apiFetch("/api/auth/account", {
+        method: "DELETE",
+        ...(appleCredentials ? { body: JSON.stringify(appleCredentials) } : {}),
+      });
       // The backend has already revoked the bearer token; clear local state.
       await signOut();
     } catch (err) {
       setDeleting(false);
+      if ((err as { code?: string })?.code === "ERR_REQUEST_CANCELED") return;
       const message = err instanceof Error ? err.message : "Please try again.";
       if (Platform.OS === "web") {
         window.alert(`Couldn't delete account. ${message}`);
@@ -38,14 +57,14 @@ export default function AboutScreen() {
     if (deleting) return;
     if (Platform.OS === "web") {
       const ok = window.confirm(
-        "Delete your account? This permanently removes your Youth Dance Music account, dances, song requests, and any subscription. This cannot be undone.",
+        "Delete your account? This permanently removes your Youth Dance Music account, dances, and song requests. App Store subscriptions must be canceled separately in Apple subscription settings. This cannot be undone.",
       );
       if (ok) performDelete();
       return;
     }
     Alert.alert(
       "Delete your account?",
-      "This permanently removes your Youth Dance Music account, dances, song requests, and any subscription. This cannot be undone.",
+      "This permanently removes your Youth Dance Music account, dances, and song requests. App Store subscriptions must be canceled separately in Apple subscription settings. This cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
         { text: "Delete account", style: "destructive", onPress: performDelete },

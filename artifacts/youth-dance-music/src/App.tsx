@@ -33,7 +33,7 @@ function AppLoading() {
   );
 }
 
-function Router() {
+function AuthenticatedRouter() {
   const { data: user, isLoading } = useQuery({
     queryKey: ["/api/auth/user"],
     retry: false,
@@ -61,6 +61,17 @@ function Router() {
       <Route path="/privacy" component={PrivacyPage} />
       <Route path="/terms" component={TermsPage} />
       <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+// Legal pages must not wait on authentication or require a session.
+function Router() {
+  return (
+    <Switch>
+      <Route path="/privacy" component={PrivacyPage} />
+      <Route path="/terms" component={TermsPage} />
+      <Route component={AuthenticatedRouter} />
     </Switch>
   );
 }
