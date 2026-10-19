@@ -41,90 +41,105 @@ id = "Yyt8CanAN4WB_RHglrsEy"
 uri = "file://attached_assets/app-store/app-store-icon-1024x1024.png"
 type = "image"
 title = "App Icon — 1024×1024px (no transparency)"
+logical_id = "b3429a03-e334-4348-9443-d6480fbd1bcc"
 
 [[outputs]]
 id = "vQ-m4jzr6e3faMzZyOcFL"
 uri = "file://attached_assets/app-store/6.7-inch/screenshot-verify.png"
 type = "image"
 title = "6.7\" Screenshot 1 — Verify a Song (1290×2796)"
+logical_id = "f19792ae-2dce-42a6-89cf-2997ec08e160"
 
 [[outputs]]
 id = "D8N4bc2Crold1Kf_5MA2T"
 uri = "file://attached_assets/app-store/6.7-inch/screenshot-result.png"
 type = "image"
 title = "6.7\" Screenshot 2 — Song Result (1290×2796)"
+logical_id = "59b54f35-1b8b-4df2-a0cb-1b7576b7cef4"
 
 [[outputs]]
 id = "7-fAA4mDKIj61vBnLjn8f"
 uri = "file://attached_assets/app-store/6.7-inch/screenshot-pro.png"
 type = "image"
 title = "6.7\" Screenshot 3 — Pro Upgrade (1290×2796)"
+logical_id = "16c78f31-e2f8-411f-9ca0-dc9bcf17855f"
 
 [[outputs]]
 id = "uBbooPf6a7o_Ct-CMwtj3"
 uri = "file://attached_assets/app-store/6.7-inch/screenshot-popular.png"
 type = "image"
 title = "6.7\" Screenshot 4 — Popular Songs (1290×2796)"
+logical_id = "fc7881e3-1178-413f-94c8-b084cd1b2bcf"
 
 [[outputs]]
 id = "mtuJ7dlNcMa7uZGSOmk8u"
 uri = "file://attached_assets/app-store/6.9-inch/screenshot-verify.png"
 type = "image"
 title = "6.9\" Screenshot 1 — Verify a Song (1320×2868)"
+logical_id = "2117ad28-b111-481b-afd1-0f14bbe94b32"
 
 [[outputs]]
 id = "v1zqlbqgosgfcwNWo7xxk"
 uri = "file://attached_assets/app-store/6.9-inch/screenshot-result.png"
 type = "image"
 title = "6.9\" Screenshot 2 — Song Result (1320×2868)"
+logical_id = "2fa6d47c-8087-48ce-9a33-e768da857cfe"
 
 [[outputs]]
 id = "zcAGBotzwJL3HR872DZQX"
 uri = "file://attached_assets/app-store/6.9-inch/screenshot-pro.png"
 type = "image"
 title = "6.9\" Screenshot 3 — Pro Upgrade (1320×2868)"
+logical_id = "5a196d3f-dd0a-46f0-9d81-bcdcd7c4b904"
 
 [[outputs]]
 id = "oWkehPReYhfW5YdQUVgKg"
 uri = "file://attached_assets/app-store/6.9-inch/screenshot-popular.png"
 type = "image"
 title = "6.9\" Screenshot 4 — Popular Songs (1320×2868)"
+logical_id = "c3f3c281-bfd7-421b-a376-c1511d6cbe9f"
 
 [[outputs]]
 id = "WzU_wyYrAqpLfyhhmyOY6"
 uri = "file://attached_assets/app-store/feature-graphic-1024x500.png"
 type = "image"
 title = "Feature Graphic — 1024×500px (required banner)"
+logical_id = "c730b117-d37e-45b1-93c1-003519be3c7f"
 
 [[outputs]]
 id = "YnY4zyLgCKMUuCJJYng9F"
 uri = "file://attached_assets/app-store/android-phone/screenshot-verify.png"
 type = "image"
 title = "Android Screenshot 1 — Verify a Song (1080×1920)"
+logical_id = "35969b45-267f-479a-8baf-832cae916768"
 
 [[outputs]]
 id = "4_R6ckpNmiW5VDa0MnowB"
 uri = "file://attached_assets/app-store/android-phone/screenshot-result.png"
 type = "image"
 title = "Android Screenshot 2 — Song Result (1080×1920)"
+logical_id = "4b31a169-e7ac-417c-a257-f9cc58db6c6e"
 
 [[outputs]]
 id = "H8SW9Z-dw28onRJi0Px8h"
 uri = "file://attached_assets/app-store/android-phone/screenshot-pro.png"
 type = "image"
 title = "Android Screenshot 3 — Pro Upgrade (1080×1920)"
+logical_id = "17d254d2-84b8-44b9-a09a-c3c370b8d47a"
 
 [[outputs]]
 id = "R0a7IWDneMEdOgvbt2Ea0"
 uri = "file://attached_assets/app-store/android-phone/screenshot-popular.png"
 type = "image"
 title = "Android Screenshot 4 — Popular Songs (1080×1920)"
+logical_id = "4228ddaf-56e1-46d5-a952-b16151082732"
 
 [[outputs]]
 id = "UKAyEiIRRDjzODOWJ2ZR_"
 uri = "file://attached_assets/app-store/apple-app-store-listing.md"
 type = "text"
 title = "App Store Listing Copy — All Fields"
+logical_id = "5f504bb2-30e1-4fa7-b96d-453502b68b52"
 
 [[outputs]]
 id = "FcVsNHvp6r741D3vwQ_oT"
@@ -132,6 +147,7 @@ uri = "file://attached_assets/generated_images/ydm-logo-mark.svg"
 type = "image"
 title = "Logo Mark (SVG)"
 description = "Vector logo mark — musical note + dancer silhouette. Scales to any size. Use on light or dark backgrounds."
+logical_id = "e1e7c05a-2255-4603-8538-e2a4bdf2b7ab"
 
 [[outputs]]
 id = "u1UigOfsYzKQKZxyBb_Uy"
@@ -139,6 +155,7 @@ uri = "file://attached_assets/generated_images/ydm-app-icon.png"
 type = "image"
 title = "App Icon — Android & iOS"
 description = "1024×1024 square app icon. Use for both Google Play and App Store submissions."
+logical_id = "88c3dc05-7b03-4f7a-9086-53bd670efe69"
 
 [[outputs]]
 id = "Jhj5Y7QlKWSBu5Qa_ayZ-"
@@ -146,6 +163,7 @@ uri = "file://attached_assets/generated_images/ydm-web-logo.png"
 type = "image"
 title = "Web Logo (transparent)"
 description = "Horizontal logo with transparent background for website headers and banners."
+logical_id = "6a2c0c36-fd52-42ea-b15d-d0b4712e4373"
 
 [[outputs]]
 id = "i4KwF2ABlv8Ha9BEflnul"
@@ -153,6 +171,7 @@ uri = "file://attached_assets/generated_images/ydm-favicon.png"
 type = "image"
 title = "Favicon / Small Icon"
 description = "Compact icon variant for browser tabs, notifications, and small UI placements."
+logical_id = "ee3e0bb4-f03c-461d-82ff-173a04ce9974"
 
 [[outputs]]
 id = "NHUgnFFev_orLZayTVpcF"
@@ -160,6 +179,7 @@ uri = "file://attached_assets/generated_images/ydm-logomark-rbw.png"
 type = "image"
 title = "Logo Mark"
 description = "Primary logo mark — dancer/note icon in red and white, transparent background."
+logical_id = "c68435ab-3e6c-4a69-89d6-dae069232145"
 
 [[outputs]]
 id = "0esPegw1f7froUvwPLW1C"
@@ -167,6 +187,7 @@ uri = "file://attached_assets/generated_images/ydm-app-icon-rbw_2.png"
 type = "image"
 title = "App Icon — Android & iOS"
 description = "Square app icon in red, black, and white. Ready for Google Play and App Store."
+logical_id = "38783a7d-177f-42f7-9107-230ed61fdf8a"
 
 [[outputs]]
 id = "_rxW-m30NsVgVywaQHxbn"
@@ -174,6 +195,7 @@ uri = "file://attached_assets/generated_images/ydm-web-logo-rbw_2.png"
 type = "image"
 title = "Web Logo"
 description = "Horizontal logo with wordmark for website headers."
+logical_id = "682f1057-0ef5-4528-8d51-2dd9a099b73d"
 
 [[outputs]]
 id = "lpnq-rkv4Txm1rbAFiqHz"
@@ -181,6 +203,7 @@ uri = "file://attached_assets/generated_images/ydm-favicon-rbw_2.png"
 type = "image"
 title = "Favicon / Small Icon"
 description = "Compact icon for browser tabs and small placements."
+logical_id = "4c24a42b-ebb0-4902-9396-3cdfc068582f"
 
 [[outputs]]
 id = "UgdooBn7HOdkKfzQbylAm"
@@ -188,6 +211,7 @@ uri = "file://attached_assets/generated_images/ydm-logomark-group.png"
 type = "image"
 title = "Logo Mark"
 description = "Group of social dancers with musical note above — red, black & white."
+logical_id = "b4a53086-82c5-454d-bc70-9865345b4b1e"
 
 [[outputs]]
 id = "NNj_pijxeFYIbeQtO0HVX"
@@ -195,6 +219,7 @@ uri = "file://attached_assets/generated_images/ydm-app-icon-group.png"
 type = "image"
 title = "App Icon — Android & iOS"
 description = "Square app icon with social dance group. Ready for Google Play and App Store."
+logical_id = "6c914d2f-1a7e-484f-9abc-f9263e4ff11c"
 
 [[outputs]]
 id = "nNA1Fs-2NzzDHBadTtgCN"
@@ -202,6 +227,7 @@ uri = "file://attached_assets/generated_images/ydm-web-logo-group.png"
 type = "image"
 title = "Web Logo"
 description = "Horizontal logo with group dancer icon and wordmark."
+logical_id = "16e1c146-6a4e-43b1-8351-38988fbf981c"
 
 [[outputs]]
 id = "Py5gqhx8vZfuvK326qu5q"
@@ -209,6 +235,7 @@ uri = "file://attached_assets/generated_images/ydm-favicon-group.png"
 type = "image"
 title = "Favicon"
 description = "Original favicon — the source design for the full set."
+logical_id = "38d95648-cf1f-41a7-a876-7ffafb05191f"
 
 [[outputs]]
 id = "HVsf9XN0HxjrsiHZUc844"
@@ -216,6 +243,7 @@ uri = "file://attached_assets/generated_images/ydm-app-icon-final.png"
 type = "image"
 title = "App Icon — Android & iOS"
 description = "Favicon design scaled up for Google Play and App Store."
+logical_id = "2d9c3145-038a-42af-8ffe-e2e0c64b1e90"
 
 [[outputs]]
 id = "wlR62hQTYsGSOCdkMSf5D"
@@ -223,6 +251,7 @@ uri = "file://attached_assets/generated_images/ydm-web-logo-final.png"
 type = "image"
 title = "Web Logo"
 description = "Favicon icon + \"Youth Dance Music\" wordmark for website headers."
+logical_id = "0803e3d8-b355-4bd4-89e7-30f46b9b0a9a"
 
 [[outputs]]
 id = "jrVDWqghCgGbQxAnkyjuB"
@@ -230,6 +259,7 @@ uri = "file://attached_assets/generated_images/ydm-logomark-final.png"
 type = "image"
 title = "Logo Mark (transparent)"
 description = "Favicon design on transparent background for flexible placement."
+logical_id = "acb885a7-620d-4b40-9707-8c0c2c619357"
 
 [[outputs]]
 id = "kwKRWi_60NYUzZnXhk6nB"
@@ -237,6 +267,7 @@ uri = "file://attached_assets/generated_images/ydm-web-logo-v2.png"
 type = "image"
 title = "Web Logo"
 description = "Red circle with dancers + \"Youth Dance Music\" bold wordmark on black."
+logical_id = "0479be73-1426-4926-b801-87ab86682c5f"
 
 [[outputs]]
 id = "gDNEoCW_DL2739F4OQ5em"
@@ -244,6 +275,7 @@ uri = "file://attached_assets/generated_images/ydm-app-icon-v2.png"
 type = "image"
 title = "App Icon — Android & iOS"
 description = "Red circle with dancer silhouettes, centered on black. Ready for Google Play and App Store."
+logical_id = "25228505-9ce3-4ac7-8762-a983bbee4ba8"
 
 [[outputs]]
 id = "Z_d5YFdz1uL6rH5zNwMzh"
@@ -251,6 +283,7 @@ uri = "file://attached_assets/generated_images/ydm-logomark-v2.png"
 type = "image"
 title = "Logo Mark (transparent)"
 description = "Red circle icon on transparent background for flexible placement."
+logical_id = "85be611d-6924-4b1d-a0b7-cddf9ff29a28"
 
 [[outputs]]
 id = "iQGcfY7-qOqn4WA3VyUY9"
@@ -258,3 +291,4 @@ uri = "file://attached_assets/generated_images/ydm-favicon-v2.png"
 type = "image"
 title = "Favicon"
 description = "Compact red circle icon for browser tabs and small UI placements."
+logical_id = "dd18ddcb-2d06-4c50-b532-7f2ac2b590a8"
