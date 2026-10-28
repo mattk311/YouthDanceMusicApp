@@ -2,10 +2,12 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { Platform } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import * as AppleAuthentication from "expo-apple-authentication";
+import { useUnstableGlobalHref } from "expo-router";
 
 import { API_BASE } from "@/lib/api";
 import { setCurrentToken } from "@/lib/authToken";
 import { clearToken, loadToken, saveToken } from "@/lib/secureStorage";
+import { rememberLoginDestination } from "@/lib/authRedirect";
 
 const MOBILE_REDIRECT_URI = "youthdancemusic://auth-callback";
 
@@ -43,6 +45,7 @@ function parseTokenFromUrl(url: string): string | null {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const currentHref = useUnstableGlobalHref();
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -74,6 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (cancelled) return;
         if (fetched) {
           tokenRef.current = stored;
+          setCurrentToken(stored);
           setToken(stored);
           setUser(fetched);
         } else {
@@ -97,6 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setError(null);
     setIsSigningIn(true);
+    rememberLoginDestination(currentHref);
     try {
       const url = `${API_BASE}/auth/google?mode=mobile&redirect=${encodeURIComponent(MOBILE_REDIRECT_URI)}`;
 
@@ -126,6 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       await saveToken(returnedToken);
       tokenRef.current = returnedToken;
+      setCurrentToken(returnedToken);
       setToken(returnedToken);
       setUser(fetched);
     } catch (err: any) {
@@ -134,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsSigningIn(false);
     }
-  }, [fetchUser]);
+  }, [fetchUser, currentHref]);
 
   const signInWithApple = useCallback(async () => {
     if (!API_BASE) {
@@ -180,6 +186,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       await saveToken(returnedToken);
       tokenRef.current = returnedToken;
+      setCurrentToken(returnedToken);
       setToken(returnedToken);
       setUser(fetched);
     } catch (err: any) {
@@ -203,15 +210,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       await clearToken().catch(() => {});
       tokenRef.current = null;
+      setCurrentToken(null);
       setToken(null);
       setUser(null);
     }
   }, []);
-
-  // Keep module-level token in sync so apiFetch can read it.
-  useEffect(() => {
-    setCurrentToken(token);
-  }, [token]);
 
   const value = useMemo<AuthContextValue>(
     () => ({ user, token, isLoading, isSigningIn, isSigningInWithApple, error, signIn, signInWithApple, signOut }),

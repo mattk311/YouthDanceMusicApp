@@ -64,6 +64,7 @@ function AuthGate() {
     <>
       <Stack screenOptions={{ headerBackTitle: "Back" }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
         <Stack.Screen
           name="subscription"
           options={{ presentation: "modal", headerShown: false }}
