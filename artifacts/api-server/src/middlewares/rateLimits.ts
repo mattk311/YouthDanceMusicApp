@@ -22,6 +22,39 @@ const perDanceStore = pgPool
     })
   : undefined;
 
+const publicSearchStore = pgPool
+  ? new PostgresRateLimitStore({ pool: pgPool, bucket: "public-search" })
+  : undefined;
+
+const publicAutocompleteStore = pgPool
+  ? new PostgresRateLimitStore({ pool: pgPool, bucket: "public-autocomplete" })
+  : undefined;
+
+// Unauthenticated song search can trigger a paid AI evaluation on a cache miss.
+// Limits are per IP and sized for many attendees sharing one venue network.
+export const publicSearchLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  ...(publicSearchStore ? { store: publicSearchStore } : {}),
+  handler: sharedJsonHandler(
+    "Too many song searches in a short time. Please wait a moment and try again.",
+  ),
+});
+
+// Autocomplete fires on keystrokes, so it gets a higher ceiling.
+export const publicAutocompleteLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 120,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  ...(publicAutocompleteStore ? { store: publicAutocompleteStore } : {}),
+  handler: sharedJsonHandler(
+    "Too many requests in a short time. Please wait a moment and try again.",
+  ),
+});
+
 export const publicRequestBurstLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 10,

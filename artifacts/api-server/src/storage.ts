@@ -17,7 +17,7 @@ import {
   notifications,
   mobileSessions,
 } from "@workspace/db";
-import { randomUUID } from "crypto";
+import { randomInt, randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { eq, sql, desc, and, inArray } from "drizzle-orm";
@@ -32,13 +32,22 @@ export function userHasProAccess(
   );
 }
 
+export const FREE_DAILY_LIMIT = 5;
+
 function generateDanceCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
   for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
+    code += chars.charAt(randomInt(chars.length));
   }
   return code;
+}
+
+const MAX_DANCE_CODE_ATTEMPTS = 5;
+
+function isUniqueViolation(error: unknown): boolean {
+  const e = error as { code?: string; cause?: { code?: string } } | null;
+  return e?.code === "23505" || e?.cause?.code === "23505";
 }
 
 export interface IStorage {
@@ -66,6 +75,7 @@ export interface IStorage {
   getDanceById(id: string): Promise<Dance | undefined>;
 
   createDanceRequest(request: InsertDanceRequest): Promise<DanceRequest>;
+  getDanceRequestById(id: string): Promise<DanceRequest | undefined>;
   getDanceRequestsByDance(danceId: string): Promise<DanceRequest[]>;
   getUserRequestCountForDance(userId: string, danceId: string): Promise<number>;
   updateDanceRequestStatus(id: string, status: string): Promise<DanceRequest | undefined>;
@@ -73,7 +83,7 @@ export interface IStorage {
   createNotification(notification: InsertNotification): Promise<Notification>;
   getNotificationsByUser(userId: string): Promise<Notification[]>;
   getUnreadNotificationCount(userId: string): Promise<number>;
-  markNotificationRead(id: string): Promise<void>;
+  markNotificationRead(id: string, userId: string): Promise<void>;
   markAllNotificationsRead(userId: string): Promise<void>;
 
   createMobileSession(token: string, userId: string, expiresAt: Date): Promise<MobileSession>;
@@ -219,20 +229,21 @@ export class MemStorage implements IStorage {
     userId: string,
   ): Promise<{ count: number; remaining: number; isSubscribed: boolean }> {
     const user = this.users.get(userId);
-    if (!user) return { count: 0, remaining: 3, isSubscribed: false };
+    if (!user) return { count: 0, remaining: FREE_DAILY_LIMIT, isSubscribed: false };
 
     const isSubscribed = await subscriptionVerifier.hasPro(user);
     const today = new Date().toISOString().split("T")[0];
     const count =
       user.lastSearchDate === today ? user.dailySearchCount || 0 : 0;
-    const remaining = isSubscribed ? -1 : Math.max(0, 3 - count);
+    const remaining = isSubscribed ? -1 : Math.max(0, FREE_DAILY_LIMIT - count);
 
     return { count, remaining, isSubscribed };
   }
 
   async createDance(insertDance: InsertDance): Promise<Dance> {
     const id = randomUUID();
-    const code = generateDanceCode();
+    let code = generateDanceCode();
+    while (await this.getDanceByCode(code)) code = generateDanceCode();
     const dance: Dance = {
       ...insertDance,
       id,
@@ -279,6 +290,10 @@ export class MemStorage implements IStorage {
     return req;
   }
 
+  async getDanceRequestById(id: string): Promise<DanceRequest | undefined> {
+    return this.danceRequestMap.get(id);
+  }
+
   async getDanceRequestsByDance(danceId: string): Promise<DanceRequest[]> {
     return Array.from(this.danceRequestMap.values())
       .filter((r) => r.danceId === danceId)
@@ -323,9 +338,9 @@ export class MemStorage implements IStorage {
       .filter((n) => n.userId === userId && !n.isRead).length;
   }
 
-  async markNotificationRead(id: string): Promise<void> {
+  async markNotificationRead(id: string, userId: string): Promise<void> {
     const notif = this.notificationMap.get(id);
-    if (notif) {
+    if (notif && notif.userId === userId) {
       notif.isRead = true;
       this.notificationMap.set(id, notif);
     }
@@ -491,44 +506,49 @@ export class DbStorage implements IStorage {
   async incrementDailySearchCount(
     userId: string,
   ): Promise<{ count: number; isNewDay: boolean }> {
-    const user = await this.getUser(userId);
-    if (!user) return { count: 0, isNewDay: false };
-
     const today = new Date().toISOString().split("T")[0];
-    const isNewDay = user.lastSearchDate !== today;
 
-    const newCount = isNewDay ? 1 : (user.dailySearchCount || 0) + 1;
-
-    await this.db
+    // Single statement so concurrent searches cannot both read the same count.
+    const result = await this.db
       .update(users)
       .set({
-        dailySearchCount: newCount,
+        dailySearchCount: sql`CASE WHEN ${users.lastSearchDate} = ${today}::date THEN COALESCE(${users.dailySearchCount}, 0) + 1 ELSE 1 END`,
         lastSearchDate: today,
       })
-      .where(eq(users.id, userId));
+      .where(eq(users.id, userId))
+      .returning({ count: users.dailySearchCount });
 
-    return { count: newCount, isNewDay };
+    if (result.length === 0) return { count: 0, isNewDay: false };
+    const count = result[0].count ?? 0;
+    return { count, isNewDay: count === 1 };
   }
 
   async getUserSearchUsage(
     userId: string,
   ): Promise<{ count: number; remaining: number; isSubscribed: boolean }> {
     const user = await this.getUser(userId);
-    if (!user) return { count: 0, remaining: 3, isSubscribed: false };
+    if (!user) return { count: 0, remaining: FREE_DAILY_LIMIT, isSubscribed: false };
 
     const isSubscribed = await subscriptionVerifier.hasPro(user);
     const today = new Date().toISOString().split("T")[0];
     const count =
       user.lastSearchDate === today ? user.dailySearchCount || 0 : 0;
-    const remaining = isSubscribed ? -1 : Math.max(0, 3 - count);
+    const remaining = isSubscribed ? -1 : Math.max(0, FREE_DAILY_LIMIT - count);
 
     return { count, remaining, isSubscribed };
   }
 
   async createDance(insertDance: InsertDance): Promise<Dance> {
-    const code = generateDanceCode();
-    const result = await this.db.insert(dances).values({ ...insertDance, code }).returning();
-    return result[0];
+    // The code column is unique; retry with a new code on the rare collision.
+    for (let attempt = 1; ; attempt++) {
+      try {
+        const code = generateDanceCode();
+        const result = await this.db.insert(dances).values({ ...insertDance, code }).returning();
+        return result[0];
+      } catch (error) {
+        if (!isUniqueViolation(error) || attempt >= MAX_DANCE_CODE_ATTEMPTS) throw error;
+      }
+    }
   }
 
   async deleteDance(id: string): Promise<void> {
@@ -562,6 +582,14 @@ export class DbStorage implements IStorage {
 
   async createDanceRequest(insertReq: InsertDanceRequest): Promise<DanceRequest> {
     const result = await this.db.insert(danceRequests).values(insertReq).returning();
+    return result[0];
+  }
+
+  async getDanceRequestById(id: string): Promise<DanceRequest | undefined> {
+    const result = await this.db
+      .select()
+      .from(danceRequests)
+      .where(eq(danceRequests.id, id));
     return result[0];
   }
 
@@ -611,11 +639,11 @@ export class DbStorage implements IStorage {
     return Number(result[0]?.count || 0);
   }
 
-  async markNotificationRead(id: string): Promise<void> {
+  async markNotificationRead(id: string, userId: string): Promise<void> {
     await this.db
       .update(notifications)
       .set({ isRead: true })
-      .where(eq(notifications.id, id));
+      .where(and(eq(notifications.id, id), eq(notifications.userId, userId)));
   }
 
   async markAllNotificationsRead(userId: string): Promise<void> {
