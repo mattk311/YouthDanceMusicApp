@@ -26,7 +26,7 @@ import {
   DanceCardSkeletonGrid,
   RequestRowSkeletonList,
 } from "@/components/skeletons";
-import type { User, Dance, DanceRequest } from "@shared/schema";
+import type { User, Dance, DanceRequest } from "@workspace/db/schema";
 import {
   AlertDialog,
   AlertDialogAction,

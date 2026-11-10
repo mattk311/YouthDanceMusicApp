@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/popover";
 import { Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Notification } from "@shared/schema";
+import type { Notification } from "@workspace/db/schema";
 
 export default function NotificationBell() {
   const { data: unreadData } = useQuery<{ count: number }>({

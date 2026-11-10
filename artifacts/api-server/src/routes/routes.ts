@@ -159,7 +159,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (mode === "mobile") {
         if (!isAllowedMobileRedirect(redirect)) {
-          return res.status(400).send("Invalid mobile redirect URI");
+          res.status(400).send("Invalid mobile redirect URI");
+          return;
         }
         if (req.session) {
           (req.session as any).mobileMode = true;
@@ -225,7 +226,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { identityToken, appleUserId, email, firstName, lastName } = req.body;
       if (!identityToken || !appleUserId) {
-        return res.status(400).json({ error: "Missing required fields" });
+        res.status(400).json({ error: "Missing required fields" });
+        return;
       }
 
       const payload = await appleSignin.verifyIdToken(identityToken, {
@@ -234,7 +236,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       if (payload.sub !== appleUserId) {
-        return res.status(401).json({ error: "Token mismatch" });
+        res.status(401).json({ error: "Token mismatch" });
+        return;
       }
 
       let user = await storage.getUserByAppleId(appleUserId);
@@ -261,7 +264,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/logout", (req, res) => {
     req.logout((err) => {
       if (err) {
-        return res.status(500).json({ error: "Logout failed" });
+        res.status(500).json({ error: "Logout failed" });
+        return;
       }
       res.json({ success: true });
     });
@@ -272,7 +276,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/mobile-logout", async (req, res) => {
     const token = (req as any).mobileToken as string | undefined;
     if (!token) {
-      return res.status(401).json({ error: "Not authenticated" });
+      res.status(401).json({ error: "Not authenticated" });
+      return;
     }
     try {
       await storage.deleteMobileSession(token);
@@ -295,7 +300,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Works for both web (cookie session) and mobile (bearer token) clients.
   app.delete("/api/auth/account", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Not authenticated" });
+      res.status(401).json({ error: "Not authenticated" });
+      return;
     }
     const user = req.user as User;
     const userId = user.id;
@@ -303,7 +309,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (user.appleId) {
       const parsed = DeleteAccountBody.safeParse(req.body ?? {});
       if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid Apple account confirmation" });
+        res.status(400).json({ error: "Invalid Apple account confirmation" });
+        return;
       }
       try {
         await revokeAppleAccount(user.appleId, parsed.data);
@@ -311,7 +318,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const status = error instanceof AppleRevocationError ? error.status : 502;
         const message = error instanceof AppleRevocationError
           ? error.message : "Could not revoke Apple authorization";
-        return res.status(status).json({ error: message });
+        res.status(status).json({ error: message });
+        return;
       }
     }
 
@@ -332,14 +340,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteUserAccount(userId);
     } catch (err) {
       req.log?.error({ err, userId }, "Account deletion failed");
-      return res.status(500).json({ error: "Failed to delete account" });
+      res.status(500).json({ error: "Failed to delete account" });
+      return;
     }
 
     // Tear down whichever auth path the request came in on.
     const mobileToken = (req as any).mobileToken as string | undefined;
     if (mobileToken) {
       // Mobile session row was already removed by deleteUserAccount; nothing else to do.
-      return res.json({ success: true });
+      res.json({ success: true });
+      return;
     }
     req.logout((err) => {
       if (err) {
@@ -355,7 +365,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { query, type } = req.query;
 
       if (!query || typeof query !== "string") {
-        return res.json({ suggestions: [] });
+        res.json({ suggestions: [] });
+        return;
       }
 
       const validType = type === "artist" ? "artist" : "track";
@@ -411,7 +422,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const connectionString = process.env.DATABASE_URL;
       if (!connectionString) {
-        return res.status(500).json({ error: "Database not configured" });
+        res.status(500).json({ error: "Database not configured" });
+        return;
       }
       const sqlClient = neon(connectionString);
       const db = drizzle(sqlClient);
@@ -427,7 +439,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       `);
       
       if (result.rows.length === 0) {
-        return res.status(404).json({ error: "Subscription not available" });
+        res.status(404).json({ error: "Subscription not available" });
+        return;
       }
       
       res.json(result.rows[0]);
@@ -446,7 +459,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the subscription price
       const connectionString = process.env.DATABASE_URL;
       if (!connectionString) {
-        return res.status(500).json({ error: "Database not configured" });
+        res.status(500).json({ error: "Database not configured" });
+        return;
       }
       const sqlClient = neon(connectionString);
       const db = drizzle(sqlClient);
@@ -463,7 +477,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       `);
       
       if (priceResult.rows.length === 0) {
-        return res.status(404).json({ error: "Subscription not available" });
+        res.status(404).json({ error: "Subscription not available" });
+        return;
       }
       
       const priceId = priceResult.rows[0].price_id as string;
@@ -505,7 +520,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = req.user as User;
       
       if (!user.stripeCustomerId) {
-        return res.status(400).json({ error: "No subscription found" });
+        res.status(400).json({ error: "No subscription found" });
+        return;
       }
       
       const stripe = await getUncachableStripeClient();
@@ -583,14 +599,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = req.user as User;
       const freshUser = await storage.getUser(user.id);
       if (!freshUser || !isSpotifyConnected(freshUser)) {
-        return res.status(400).json({ error: "Spotify not connected" });
+        res.status(400).json({ error: "Spotify not connected" });
+        return;
       }
       const playlists = await getUserPlaylists(freshUser);
       res.json({ playlists });
     } catch (error: any) {
       console.error("Error fetching playlists:", error);
       if (error.message?.includes("expired") || error.message?.includes("reconnect")) {
-        return res.status(401).json({ error: error.message });
+        res.status(401).json({ error: error.message });
+        return;
       }
       res.status(500).json({ error: "Failed to fetch playlists" });
     }
@@ -604,7 +622,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const freshUser = await storage.getUser(user.id);
       if (!freshUser || !isSpotifyConnected(freshUser)) {
-        return res.status(400).json({ error: "Spotify not connected" });
+        res.status(400).json({ error: "Spotify not connected" });
+        return;
       }
 
       const tracks = await getPlaylistTracks(freshUser, playlistId);
@@ -612,7 +631,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error fetching playlist tracks:", error);
       if (error.message?.includes("expired") || error.message?.includes("reconnect")) {
-        return res.status(401).json({ error: error.message });
+        res.status(401).json({ error: error.message });
+        return;
       }
       res.status(500).json({ error: "Failed to fetch playlist tracks" });
     }
@@ -626,21 +646,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { trackId, position } = req.body;
 
       if (!trackId || typeof trackId !== "string") {
-        return res.status(400).json({ error: "Track ID is required" });
+        res.status(400).json({ error: "Track ID is required" });
+        return;
       }
 
       let parsedPosition: number | undefined;
       if (position !== undefined && position !== null) {
         const n = Number(position);
         if (!Number.isInteger(n) || n < 0) {
-          return res.status(400).json({ error: "Position must be a non-negative integer" });
+          res.status(400).json({ error: "Position must be a non-negative integer" });
+          return;
         }
         parsedPosition = n;
       }
 
       const freshUser = await storage.getUser(user.id);
       if (!freshUser || !isSpotifyConnected(freshUser)) {
-        return res.status(400).json({ error: "Spotify not connected" });
+        res.status(400).json({ error: "Spotify not connected" });
+        return;
       }
 
       await addTrackToPlaylist(freshUser, playlistId, trackId, parsedPosition);
@@ -648,7 +671,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error adding to playlist:", error);
       if (error.message?.includes("expired") || error.message?.includes("reconnect")) {
-        return res.status(401).json({ error: error.message });
+        res.status(401).json({ error: error.message });
+        return;
       }
       res.status(500).json({ error: "Failed to add song to playlist" });
     }
@@ -661,18 +685,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = req.user as User;
 
       if (!title || typeof title !== "string") {
-        return res.status(400).json({ error: "Title is required" });
+        res.status(400).json({ error: "Title is required" });
+        return;
       }
 
       // Check usage limits for non-subscribers
       const usage = await storage.getUserSearchUsage(user.id);
       if (!usage.isSubscribed && usage.remaining <= 0) {
-        return res.status(403).json({ 
+        res.status(403).json({
           error: "Daily search limit reached",
           message: "You've used all 5 free searches for today. Subscribe for unlimited searches!",
           limitReached: true,
           usage
         });
+        return;
       }
 
       const artistName = artist && typeof artist === "string" ? artist : "";
@@ -702,7 +728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Extract track ID from Spotify URL (format: https://open.spotify.com/track/TRACK_ID)
         const spotifyTrackId = cachedSong.spotifyUrl?.split('/track/')[1]?.split('?')[0] || null;
 
-        return res.json({
+        res.json({
           found: true,
           cached: true,
           song: {
@@ -726,6 +752,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
           usage: updatedUsage,
         });
+        return;
       }
 
       console.log(`Cache miss for: ${title} - ${artistName}, fetching from Spotify...`);
@@ -734,7 +761,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const track = await searchSong(title, artistName || undefined);
 
       if (!track) {
-        return res.json({ found: false });
+        res.json({ found: false });
+        return;
       }
 
       // Evaluate the song with AI (with graceful fallback)
@@ -828,7 +856,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { title, artist } = req.query;
 
       if (!title || typeof title !== "string") {
-        return res.status(400).json({ error: "Title is required" });
+        res.status(400).json({ error: "Title is required" });
+        return;
       }
 
       const artistName = artist && typeof artist === "string" ? artist : "";
@@ -839,7 +868,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const backfilledSong = await backfillSongAiFields(cachedSongInitial);
         const cachedSong = await enforceExplicitRule(backfilledSong);
         const spotifyTrackId = cachedSong.spotifyUrl?.split('/track/')[1]?.split('?')[0] || null;
-        return res.json({
+        res.json({
           found: true,
           song: {
             title: cachedSong.songName,
@@ -856,11 +885,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             danceability: cachedSong.aiDanceability ?? null,
           },
         });
+        return;
       }
 
       const track = await searchSong(title, artistName || undefined);
       if (!track) {
-        return res.json({ found: false });
+        res.json({ found: false });
+        return;
       }
 
       let evaluation = null;
@@ -934,7 +965,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { query, type } = req.query;
       if (!query || typeof query !== "string") {
-        return res.json({ suggestions: [] });
+        res.json({ suggestions: [] });
+        return;
       }
       const validType = type === "artist" ? "artist" : "track";
       const suggestions = await getAutocompleteSuggestions(query, validType);
@@ -972,7 +1004,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0].message });
+        res.status(400).json({ error: parsed.error.issues[0].message });
+        return;
       }
 
       const user = req.user as User;
@@ -1007,10 +1040,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = req.user as User;
       const dance = await storage.getDanceById(req.params.id);
       if (!dance) {
-        return res.status(404).json({ error: "Dance not found" });
+        res.status(404).json({ error: "Dance not found" });
+        return;
       }
       if (dance.creatorUserId !== user.id) {
-        return res.status(403).json({ error: "Not authorized to delete this dance" });
+        res.status(403).json({ error: "Not authorized to delete this dance" });
+        return;
       }
       await storage.deleteDance(req.params.id);
       res.json({ success: true });
@@ -1025,7 +1060,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const dance = await storage.getDanceByCode(req.params.code.toUpperCase());
       if (!dance) {
-        return res.status(404).json({ error: "Dance not found" });
+        res.status(404).json({ error: "Dance not found" });
+        return;
       }
       res.json({
         id: dance.id,
@@ -1049,7 +1085,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = req.user as User;
       const dance = await storage.getDanceById(req.params.danceId);
       if (!dance || dance.creatorUserId !== user.id) {
-        return res.status(404).json({ error: "Dance not found" });
+        res.status(404).json({ error: "Dance not found" });
+        return;
       }
       const requests = await storage.getDanceRequestsByDance(dance.id);
       res.json(requests);
@@ -1067,7 +1104,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = req.user as User;
       const dance = await storage.getDanceByCode(req.params.code.toUpperCase());
       if (!dance) {
-        return res.status(404).json({ error: "Dance not found" });
+        res.status(404).json({ error: "Dance not found" });
+        return;
       }
       const count = await storage.getUserRequestCountForDance(user.id, dance.id);
       res.json({ count, remaining: Math.max(0, MAX_REQUESTS_PER_DANCE - count), limit: MAX_REQUESTS_PER_DANCE });
@@ -1091,21 +1129,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0].message });
+        res.status(400).json({ error: parsed.error.issues[0].message });
+        return;
       }
 
       const dance = await storage.getDanceByCode(req.params.code.toUpperCase());
       if (!dance) {
-        return res.status(404).json({ error: "Dance not found" });
+        res.status(404).json({ error: "Dance not found" });
+        return;
       }
 
       if (!dance.isActive) {
-        return res.status(400).json({ error: "This dance is no longer accepting requests" });
+        res.status(400).json({ error: "This dance is no longer accepting requests" });
+        return;
       }
 
       const currentCount = await storage.getUserRequestCountForDance(user.id, dance.id);
       if (currentCount >= MAX_REQUESTS_PER_DANCE) {
-        return res.status(400).json({ error: `You can only request up to ${MAX_REQUESTS_PER_DANCE} songs per dance` });
+        res.status(400).json({ error: `You can only request up to ${MAX_REQUESTS_PER_DANCE} songs per dance` });
+        return;
       }
 
       const request = await storage.createDanceRequest({
@@ -1149,7 +1191,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { status } = req.body;
       if (!status || !["accepted", "rejected"].includes(status)) {
-        return res.status(400).json({ error: "Status must be 'accepted' or 'rejected'" });
+        res.status(400).json({ error: "Status must be 'accepted' or 'rejected'" });
+        return;
       }
 
       const user = req.user as User;
@@ -1165,7 +1208,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (!foundRequest) {
-        return res.status(404).json({ error: "Request not found or not authorized" });
+        res.status(404).json({ error: "Request not found or not authorized" });
+        return;
       }
 
       const updatedRequest = await storage.updateDanceRequestStatus(requestId, status);
@@ -1270,21 +1314,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!parsed.success) {
         const issues = parsed.error.issues ?? [];
         const msg = issues[0]?.message ?? "Invalid request";
-        return res.status(400).json({ error: msg });
+        res.status(400).json({ error: msg });
+        return;
       }
 
-      const dance = await storage.getDanceByCode(req.params.code.toUpperCase());
+      const rawCode = req.params.code;
+      const code = Array.isArray(rawCode) ? rawCode[0] : rawCode;
+      const dance = await storage.getDanceByCode((code ?? "").toUpperCase());
       if (!dance) {
-        return res.status(404).json({ error: "Dance not found" });
+        res.status(404).json({ error: "Dance not found" });
+        return;
       }
       if (!dance.isActive) {
-        return res.status(400).json({ error: "This dance is no longer accepting requests" });
+        res.status(400).json({ error: "This dance is no longer accepting requests" });
+        return;
       }
 
       const guestUserId = `guest:${parsed.data.requesterName.toLowerCase().trim()}`;
       const currentCount = await storage.getUserRequestCountForDance(guestUserId, dance.id);
       if (currentCount >= MAX_REQUESTS_PER_DANCE) {
-        return res.status(400).json({ error: `You can only request up to ${MAX_REQUESTS_PER_DANCE} songs per dance` });
+        res.status(400).json({ error: `You can only request up to ${MAX_REQUESTS_PER_DANCE} songs per dance` });
+        return;
       }
 
       const request = await storage.createDanceRequest({
@@ -1334,10 +1384,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const usage = await storage.getUserSearchUsage(user.id);
       
       if (!usage.isSubscribed) {
-        return res.status(403).json({ 
+        res.status(403).json({
           error: "Pro subscription required",
           message: "Popular songs is a Pro feature. Subscribe to access it!",
         });
+        return;
       }
 
       const allSongs = await storage.getAllSongsOrderedBySearchCount();

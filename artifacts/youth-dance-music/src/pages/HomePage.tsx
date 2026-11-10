@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Sparkles, Music2, Wand2 } from "lucide-react";
-import type { User } from "@shared/schema";
+import type { User } from "@workspace/db/schema";
 
 interface UsageData {
   count: number;

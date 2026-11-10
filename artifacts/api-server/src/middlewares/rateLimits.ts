@@ -42,7 +42,8 @@ export const publicRequestPerDanceLimiter = rateLimit({
   ...(perDanceStore ? { store: perDanceStore } : {}),
   keyGenerator: (req: Request) => {
     const ipKey = ipKeyGenerator(req.ip ?? "");
-    const code = (req.params["code"] ?? "").toUpperCase();
+    const rawCode = req.params["code"];
+    const code = (Array.isArray(rawCode) ? rawCode[0] ?? "" : rawCode ?? "").toUpperCase();
     return `${ipKey}:${code}`;
   },
   handler: sharedJsonHandler(

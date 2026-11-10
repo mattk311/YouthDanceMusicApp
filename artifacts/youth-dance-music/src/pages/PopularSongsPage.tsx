@@ -21,7 +21,7 @@ import {
 import AppShell from "@/components/AppShell";
 import EmptyState from "@/components/EmptyState";
 import { SongRowSkeletonList } from "@/components/skeletons";
-import type { Song, User } from "@shared/schema";
+import type { Song, User } from "@workspace/db/schema";
 
 const PAGE_SIZE = 20;
 

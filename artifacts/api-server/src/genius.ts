@@ -1,21 +1,36 @@
+import { z } from "zod";
+import { logger } from "./lib/logger";
+
 const GENIUS_API_KEY = process.env.GENIUS_API_KEY;
 const GENIUS_BASE_URL = "https://api.genius.com";
 
-interface GeniusSearchHit {
-  result: {
-    id: number;
-    title: string;
-    primary_artist: { name: string };
-    url: string;
-  };
-}
+const geniusSearchSchema = z.object({
+  response: z.object({
+    hits: z.array(z.object({
+      result: z.object({
+        id: z.number(),
+        title: z.string(),
+        primary_artist: z.object({ name: z.string() }),
+      }),
+    })),
+  }),
+});
+
+const geniusSongSchema = z.object({
+  response: z.object({
+    song: z.object({
+      lyrics: z.object({ plain: z.string().optional() }).optional(),
+      description: z.object({ plain: z.string().optional() }).optional(),
+    }),
+  }),
+});
 
 export async function fetchLyricsFromGenius(
   songTitle: string,
   artist: string,
 ): Promise<string | null> {
   if (!GENIUS_API_KEY) {
-    console.warn("[Genius] GENIUS_API_KEY is not set, skipping lyrics lookup");
+    logger.warn("[Genius] GENIUS_API_KEY is not set, skipping lyrics lookup");
     return null;
   }
 
@@ -28,15 +43,15 @@ export async function fetchLyricsFromGenius(
     });
 
     if (!searchRes.ok) {
-      console.error(`[Genius] Search failed: ${searchRes.status}`);
+      logger.error({ status: searchRes.status }, "[Genius] Search failed");
       return null;
     }
 
-    const searchData = await searchRes.json();
-    const hits: GeniusSearchHit[] = searchData?.response?.hits ?? [];
+    const searchData = geniusSearchSchema.parse(await searchRes.json());
+    const hits = searchData.response.hits;
 
     if (hits.length === 0) {
-      console.log(`[Genius] No results for: ${songTitle} - ${artist}`);
+      logger.debug("[Genius] No results");
       return null;
     }
 
@@ -63,24 +78,24 @@ export async function fetchLyricsFromGenius(
     });
 
     if (!songRes.ok) {
-      console.error(`[Genius] Song fetch failed: ${songRes.status}`);
+      logger.error({ status: songRes.status }, "[Genius] Song fetch failed");
       return null;
     }
 
-    const songData = await songRes.json();
+    const songData = geniusSongSchema.parse(await songRes.json());
     const lyrics: string | undefined =
       songData?.response?.song?.lyrics?.plain ||
       songData?.response?.song?.description?.plain;
 
     if (!lyrics) {
-      console.log(`[Genius] No lyrics text returned for song ID ${songId}`);
+      logger.debug({ songId }, "[Genius] No lyrics text returned");
       return null;
     }
 
-    console.log(`[Genius] Found lyrics for: ${songTitle} - ${artist}`);
+    logger.debug("[Genius] Found lyrics");
     return lyrics;
   } catch (err) {
-    console.error("[Genius] Error fetching lyrics:", err);
+    logger.error({ errorType: err instanceof Error ? err.name : "UnknownError" }, "[Genius] Error fetching lyrics");
     return null;
   }
 }

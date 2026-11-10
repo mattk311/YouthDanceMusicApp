@@ -1,5 +1,12 @@
 import { storage } from "./storage";
 import type { User } from "@workspace/db";
+import { z } from "zod";
+
+const spotifyTokenSchema = z.object({
+  access_token: z.string().min(1),
+  expires_in: z.number().positive(),
+  refresh_token: z.string().min(1).optional(),
+});
 
 const SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize";
 const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
@@ -62,7 +69,7 @@ export async function exchangeSpotifyCode(code: string, userId: string): Promise
     throw new Error("Failed to exchange Spotify authorization code");
   }
 
-  const data = await response.json();
+  const data = spotifyTokenSchema.parse(await response.json());
   const expiresAt = new Date(Date.now() + data.expires_in * 1000);
 
   const existingUser = await storage.getUser(userId);
@@ -102,7 +109,7 @@ async function refreshAccessToken(user: User): Promise<string> {
     throw new Error("Spotify session expired. Please reconnect your Spotify account.");
   }
 
-  const data = await response.json();
+  const data = spotifyTokenSchema.parse(await response.json());
   const expiresAt = new Date(Date.now() + data.expires_in * 1000);
 
   await storage.updateUser(user.id, {

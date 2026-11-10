@@ -40,7 +40,7 @@ const AutocompleteInput = forwardRef<AutocompleteInputRef, AutocompleteInputProp
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useImperativeHandle(ref, () => ({
     closeSuggestions: () => {
