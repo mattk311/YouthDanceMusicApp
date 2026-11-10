@@ -7,10 +7,12 @@ import { searchSong, getAutocompleteSuggestions } from "../spotify";
 import { getSpotifyAuthUrl, exchangeSpotifyCode, isSpotifyConnected, getUserPlaylists, getPlaylistTracks, addTrackToPlaylist, disconnectSpotify } from "../spotifyUserClient";
 import { evaluateSongForLDSChurchDance, type SongEvaluation } from "../ai-evaluator";
 import type { User, Song } from "@workspace/db";
-import { storage } from "../storage";
+import { FREE_DAILY_LIMIT, storage } from "../storage";
 import {
   publicRequestBurstLimiter,
   publicRequestPerDanceLimiter,
+  publicSearchLimiter,
+  publicAutocompleteLimiter,
 } from "../middlewares/rateLimits";
 import { getUncachableStripeClient, getStripePublishableKey } from "../stripeClient";
 import { sql } from "drizzle-orm";
@@ -20,8 +22,6 @@ import { z } from "zod/v4";
 import { subscriptionVerifier } from "../subscriptionFreshness";
 import { AppleRevocationError, revokeAppleAccount } from "../appleAccountRevocation";
 import { DeleteAccountBody } from "@workspace/api-zod";
-
-const FREE_DAILY_LIMIT = 5;
 
 // Backfill missing AI fields (especially aiDanceability) on a cached song.
 // Returns the song unchanged if backfill is unnecessary or AI fails.
@@ -694,7 +694,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!usage.isSubscribed && usage.remaining <= 0) {
         res.status(403).json({
           error: "Daily search limit reached",
-          message: "You've used all 5 free searches for today. Subscribe for unlimited searches!",
+          message: `You've used all ${FREE_DAILY_LIMIT} free searches for today. Subscribe for unlimited searches!`,
           limitReached: true,
           usage
         });
@@ -851,7 +851,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Public endpoint to search songs for dance requests (no auth required, no usage limits)
-  app.get("/api/songs/search-public", async (req, res) => {
+  app.get("/api/songs/search-public", publicSearchLimiter, async (req, res) => {
     try {
       const { title, artist } = req.query;
 
@@ -961,7 +961,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Public autocomplete for dance requests
-  app.get("/api/songs/autocomplete-public", async (req, res) => {
+  app.get("/api/songs/autocomplete-public", publicAutocompleteLimiter, async (req, res) => {
     try {
       const { query, type } = req.query;
       if (!query || typeof query !== "string") {
@@ -1004,7 +1004,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) {
-        res.status(400).json({ error: parsed.error.issues[0].message });
+        res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid request" });
         return;
       }
 
@@ -1129,7 +1129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) {
-        res.status(400).json({ error: parsed.error.issues[0].message });
+        res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid request" });
         return;
       }
 
@@ -1197,17 +1197,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const user = req.user as User;
 
-      const allDances = await storage.getDancesByCreator(user.id);
       const requestId = req.params.requestId;
 
-      let foundRequest = null;
-      for (const dance of allDances) {
-        const danceRequests = await storage.getDanceRequestsByDance(dance.id);
-        foundRequest = danceRequests.find(r => r.id === requestId);
-        if (foundRequest) break;
-      }
+      const foundRequest = await storage.getDanceRequestById(requestId);
+      const dance = foundRequest
+        ? await storage.getDanceById(foundRequest.danceId)
+        : undefined;
 
-      if (!foundRequest) {
+      if (!foundRequest || !dance || dance.creatorUserId !== user.id) {
         res.status(404).json({ error: "Request not found or not authorized" });
         return;
       }
@@ -1246,7 +1243,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/notifications/:id/read", requireAuth, async (req, res) => {
     try {
-      await storage.markNotificationRead(req.params.id);
+      const user = req.user as User;
+      await storage.markNotificationRead(req.params.id, user.id);
       res.json({ success: true });
     } catch (error) {
       console.error("Error marking notification read:", error);
@@ -1271,7 +1269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const allSongs = await storage.getAllSongsOrderedBySearchCount();
       const filtered = allSongs
-        .filter((s) => !s.aiUnavailable && s.aiRecommendation && s.aiRecommendation !== "unfit")
+        .filter((s) => !s.aiUnavailable && s.aiRecommendation && s.aiRecommendation !== "not-recommended")
         .slice(0, 25)
         .map((s) => ({
           id: s.id,

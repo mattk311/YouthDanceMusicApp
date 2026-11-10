@@ -81,11 +81,17 @@ if (pgPool) {
   logger.info("Using MemoryStore (development only)");
 }
 
-// Session configuration
+// Session configuration. A fallback secret in source control would let anyone
+// sign session cookies, so production must supply its own.
+const sessionSecret = process.env.SESSION_SECRET;
+if (!sessionSecret && process.env.NODE_ENV === "production") {
+  throw new Error("SESSION_SECRET environment variable is not set");
+}
+
 app.use(
   session({
     store: sessionStore,
-    secret: process.env.SESSION_SECRET || "church-dance-music-checker-secret",
+    secret: sessionSecret || "dev-only-session-secret",
     resave: false,
     saveUninitialized: false,
     cookie: {
